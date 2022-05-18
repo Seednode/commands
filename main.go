@@ -1,11 +1,13 @@
 /*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2022 Seednode <seednode@seedno.de>
 */
+
 package main
 
-import "seedno.de/seednode/commands-web/cmd"
+import (
+	web "seedno.de/seednode/commands-web/web"
+)
 
 func main() {
-	cmd.Execute()
+	web.ServePage()
 }
