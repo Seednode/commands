@@ -18,7 +18,7 @@ func LoadEnv() error {
 		return err
 	}
 
-	envFile := filepath.FromSlash(homeDirectory + "/.config/errwrapper/.env")
+	envFile := filepath.FromSlash(homeDirectory + "/.config/commands/.env")
 	err = godotenv.Load(envFile)
 	if err != nil {
 		return err
