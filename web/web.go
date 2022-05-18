@@ -79,7 +79,7 @@ func GenerateHeader(totalCommandCount, failedCommandCount int) string {
     <table>
       <thead>
         <tr>
-          <th>start_time</th><th>duration</th><th>host_name</th><th>command_name</th><th>exit_code</th>
+          <th>row</th><th>start_time</th><th>duration</th><th>host_name</th><th>command_name</th><th>exit_code</th>
         </tr>
       </thead>
       <tbody>

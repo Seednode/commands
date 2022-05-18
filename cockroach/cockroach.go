@@ -14,6 +14,7 @@ import (
 )
 
 type Row struct {
+	RowNumber   int
 	StartTime   time.Time
 	Duration    time.Duration
 	HostName    string
@@ -136,7 +137,8 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
 	rowSlice := []Row{}
 
-	statement := `select 
+	statement := `select
+	row_number() over() as row,
 	date_trunc('second', starttime) as start_time,
 	date_trunc('second', (age(stoptime, starttime)::time)) as duration,
 	hostname as host_name,
@@ -154,7 +156,7 @@ func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
 
 	for rows.Next() {
 		var r Row
-		err := rows.Scan(&r.StartTime, &r.Duration, &r.HostName, &r.CommandName, &r.ExitCode)
+		err := rows.Scan(&r.RowNumber, &r.StartTime, &r.Duration, &r.HostName, &r.CommandName, &r.ExitCode)
 		if err != nil {
 			return rowSlice, err
 		}
