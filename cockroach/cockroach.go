@@ -215,5 +215,7 @@ func RunQuery() ([]Row, int, int, error) {
 		}
 	}
 
+	fmt.Println("Formatted time zones")
+
 	return commands, totalCommandCount, failedCommandCount, nil
 }
