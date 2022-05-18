@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"strconv"
 	"text/template"
+	"time"
 
 	cockroach "seedno.de/seednode/commands-web/cockroach"
 	utils "seedno.de/seednode/commands-web/utils"
@@ -96,6 +97,8 @@ func GenerateFooter() string {
 }
 
 func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int) error {
+	startTime := time.Now()
+
 	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount)
 	if err != nil {
 		return err
@@ -118,7 +121,11 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int) 
 	htmlFooter := GenerateFooter()
 	io.WriteString(w, htmlFooter)
 
-	fmt.Println("Constructed HTML page")
+	fmt.Printf("Constructed HTML page for %v commands (%v total, %v failed) in %v.\n",
+		commandCount,
+		totalCommandCount,
+		failedCommandCount,
+		time.Since(startTime))
 
 	return nil
 }

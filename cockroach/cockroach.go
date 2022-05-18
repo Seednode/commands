@@ -94,14 +94,11 @@ func openDatabase(databaseURL string) (*pgx.Conn, error) {
 		return nil, err
 	}
 
-	fmt.Println("Opened database")
-
 	return connection, nil
 }
 
 func closeDatabase(connection *pgx.Conn) {
 	connection.Close(context.Background())
-	fmt.Println("Closed database")
 }
 
 func setTimeZone(oldTime time.Time, timezone string) (time.Time, error) {
@@ -124,8 +121,6 @@ func getTotalCommandCount(connection *pgx.Conn) (int, error) {
 		return totalCommandCount, err
 	}
 
-	fmt.Printf("Retrieved total command count: %v\n", totalCommandCount)
-
 	return totalCommandCount, nil
 }
 
@@ -137,8 +132,6 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 	if err != nil {
 		return failedCommandCount, err
 	}
-
-	fmt.Printf("Retrieved failed command count: %v\n", failedCommandCount)
 
 	return failedCommandCount, nil
 }
@@ -173,8 +166,6 @@ func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
 		rowSlice = append(rowSlice, r)
 	}
 
-	fmt.Printf("Retrieved %v recent commands.\n", len(rowSlice))
-
 	return rowSlice, nil
 }
 
@@ -207,8 +198,6 @@ func RunQuery(databaseURL, timezone string, commandCount int) ([]Row, int, int, 
 			return []Row{}, 0, 0, err
 		}
 	}
-
-	fmt.Println("Formatted time zones")
 
 	return commands, totalCommandCount, failedCommandCount, nil
 }
