@@ -169,7 +169,7 @@ func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
 func RunQuery() ([]Row, int, int, error) {
 	err := utils.LoadEnv()
 	if err != nil {
-		return []Row{}, 0, 0, err
+		fmt.Println("Environment file not found.")
 	}
 
 	databaseURL, err := getDatabaseURL()
