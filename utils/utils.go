@@ -5,7 +5,7 @@ Copyright © 2022 Seednode <seednode@seedno.de>
 package cmd
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -27,12 +27,12 @@ func LoadEnv() error {
 	return nil
 }
 
-func GetEnvVar(variable string) string {
+func GetEnvVar(variable string) (string, error) {
 	v := os.Getenv(variable)
 	if v == "" {
-		fmt.Println("Variable " + variable + " is empty. Exiting.")
-		os.Exit(1)
+		err := errors.New("variable " + variable + " is empty. exiting")
+		return "", err
 	}
 
-	return v
+	return v, nil
 }

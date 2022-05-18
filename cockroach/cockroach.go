@@ -21,15 +21,55 @@ type Row struct {
 	ExitCode    int
 }
 
-func GetDatabaseURL() string {
-	host := "host=" + utils.GetEnvVar("ERRWRAPPER_DB_HOST")
-	port := " port=" + utils.GetEnvVar("ERRWRAPPER_DB_PORT")
-	user := " user=" + utils.GetEnvVar("ERRWRAPPER_DB_USER")
-	database := " dbname=" + utils.GetEnvVar("ERRWRAPPER_DB_NAME")
-	sslMode := " sslmode=" + utils.GetEnvVar("ERRWRAPPER_DB_SSL_MODE")
-	sslRootCert := " sslrootcert=" + utils.GetEnvVar("ERRWRAPPER_DB_ROOT_CERT")
-	sslClientKey := " sslkey=" + utils.GetEnvVar("ERRWRAPPER_DB_SSL_KEY")
-	sslClientCert := " sslcert=" + utils.GetEnvVar("ERRWRAPPER_DB_SSL_CERT")
+func getDatabaseURL() (string, error) {
+	host, err := utils.GetEnvVar("ERRWRAPPER_DB_HOST")
+	if err != nil {
+		return "", err
+	}
+	host = "host=" + host
+
+	port, err := utils.GetEnvVar("ERRWRAPPER_DB_PORT")
+	if err != nil {
+		return "", err
+	}
+	port = " port=" + port
+
+	user, err := utils.GetEnvVar("ERRWRAPPER_DB_USER")
+	if err != nil {
+		return "", err
+	}
+	user = " user=" + user
+
+	database, err := utils.GetEnvVar("ERRWRAPPER_DB_NAME")
+	if err != nil {
+		return "", err
+	}
+	database = " dbname=" + database
+
+	sslMode, err := utils.GetEnvVar("ERRWRAPPER_DB_SSL_MODE")
+	if err != nil {
+		return "", err
+	}
+	sslMode = " sslmode=" + sslMode
+
+	sslRootCert, err := utils.GetEnvVar("ERRWRAPPER_DB_ROOT_CERT")
+	if err != nil {
+		return "", err
+	}
+	sslRootCert = " sslrootcert=" + sslRootCert
+
+	sslClientKey, err := utils.GetEnvVar("ERRWRAPPER_DB_SSL_KEY")
+	if err != nil {
+		return "", err
+	}
+	sslClientKey = " sslkey=" + sslClientKey
+
+	sslClientCert, err := utils.GetEnvVar("ERRWRAPPER_DB_SSL_CERT")
+	if err != nil {
+		return "", err
+	}
+	sslClientCert = " sslcert=" + sslClientCert
+
 	connection := fmt.Sprint(
 		host,
 		port,
@@ -41,22 +81,7 @@ func GetDatabaseURL() string {
 		sslClientCert,
 	)
 
-	return connection
-}
-
-func CreateSQLStatement() (string, string) {
-	statement1 := "set time zone 'America/Chicago';"
-	statement2 := `select 
-	date_trunc('second', starttime) as start_time,
-	date_trunc('second', (age(stoptime, starttime)::time)) as duration,
-	hostname as host_name,
-	commandname as command_name,
-	exitcode as exit_code
-	from logging
-	order by starttime desc
-	limit 1000;`
-
-	return statement1, statement2
+	return connection, nil
 }
 
 func openDatabase(databaseURL string) (*pgx.Conn, error) {
@@ -68,30 +93,42 @@ func openDatabase(databaseURL string) (*pgx.Conn, error) {
 	return connection, nil
 }
 
-func GetCommands() ([]Row, error) {
+func setTimeZone(oldTime time.Time) (time.Time, error) {
+	timezone, err := utils.GetEnvVar("ERRWRAPPER_TZ")
+	if err != nil {
+		return oldTime, err
+	}
+
+	location, err := time.LoadLocation(timezone)
+	if err != nil {
+		return oldTime, err
+	}
+
+	newTime := oldTime.In(location)
+
+	return newTime, nil
+}
+
+func createSQLStatement() string {
+	statement := `select 
+	date_trunc('second', starttime) as start_time,
+	date_trunc('second', (age(stoptime, starttime)::time)) as duration,
+	hostname as host_name,
+	commandname as command_name,
+	exitcode as exit_code
+	from logging
+	order by starttime desc
+	limit 1000;`
+
+	return statement
+}
+
+func getCommands(connection *pgx.Conn) ([]Row, error) {
 	rowSlice := []Row{}
 
-	err := utils.LoadEnv()
-	if err != nil {
-		return []Row{}, err
-	}
+	statement := createSQLStatement()
 
-	databaseURL := GetDatabaseURL()
-	connection, err := openDatabase(databaseURL)
-	if err != nil {
-		return rowSlice, err
-	}
-	defer connection.Close(context.Background())
-
-	statement1, statement2 := CreateSQLStatement()
-
-	rows, err := connection.Query(context.Background(), statement1)
-	if err != nil {
-		return rowSlice, nil
-	}
-	rows.Close()
-
-	rows, err = connection.Query(context.Background(), statement2)
+	rows, err := connection.Query(context.Background(), statement)
 	if err != nil {
 		return rowSlice, err
 	}
@@ -106,7 +143,37 @@ func GetCommands() ([]Row, error) {
 		rowSlice = append(rowSlice, r)
 	}
 
-	fmt.Println(rowSlice)
-
 	return rowSlice, nil
+}
+
+func RunQuery() ([]Row, error) {
+	err := utils.LoadEnv()
+	if err != nil {
+		return []Row{}, err
+	}
+
+	databaseURL, err := getDatabaseURL()
+	if err != nil {
+		return []Row{}, err
+	}
+
+	connection, err := openDatabase(databaseURL)
+	if err != nil {
+		return []Row{}, err
+	}
+	defer connection.Close(context.Background())
+
+	commands, err := getCommands(connection)
+	if err != nil {
+		return []Row{}, err
+	}
+
+	for i := range commands {
+		commands[i].StartTime, err = setTimeZone(commands[i].StartTime)
+		if err != nil {
+			return []Row{}, err
+		}
+	}
+
+	return commands, nil
 }

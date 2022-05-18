@@ -5,21 +5,29 @@ Copyright © 2022 Seednode <seednode@seedno.de>
 package cmd
 
 import (
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"strconv"
+
 	cockroach "seedno.de/seednode/commands-web/cockroach"
 )
 
 func ServePage() {
 
-	_, err := cockroach.GetCommands()
-	if err != nil {
-		panic(err)
+	var counter int = 1
+
+	h1 := func(w http.ResponseWriter, _ *http.Request) {
+		results, err := cockroach.RunQuery()
+		if err != nil {
+			panic(err)
+		}
+		io.WriteString(w, strconv.Itoa(counter)+"\n"+fmt.Sprintln(results))
+		counter += 1
 	}
 
-	//	h1 := func(w http.ResponseWriter, _ *http.Request) {
-	//		io.WriteString(w, starttime+"\n"+duration+"\n"+hostname+"\n"+commandname+"\n"+exitcode+"\n")
-	//	}
+	http.HandleFunc("/", h1)
 
-	//	http.HandleFunc("/", h1)
-
-	//	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
