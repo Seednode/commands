@@ -23,7 +23,7 @@ type Row struct {
 	ExitCode    int
 }
 
-func getDatabaseURL() (string, error) {
+func GetDatabaseURL() (string, error) {
 	host, err := utils.GetEnvVar("COMMANDS_DB_HOST")
 	if err != nil {
 		return "", err
@@ -99,6 +99,11 @@ func openDatabase(databaseURL string) (*pgx.Conn, error) {
 	return connection, nil
 }
 
+func closeDatabase(connection *pgx.Conn) {
+	connection.Close(context.Background())
+	fmt.Println("Closed database")
+}
+
 func setTimeZone(oldTime time.Time, timezone string) (time.Time, error) {
 	location, err := time.LoadLocation(timezone)
 	if err != nil {
@@ -168,27 +173,18 @@ func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
 		rowSlice = append(rowSlice, r)
 	}
 
-	fmt.Printf("Retrieved %v recent commands.", len(rowSlice))
+	fmt.Printf("Retrieved %v recent commands.\n", len(rowSlice))
 
 	return rowSlice, nil
 }
 
-func RunQuery(commandCount int) ([]Row, int, int, error) {
-	err := utils.LoadEnv()
-	if err != nil {
-		fmt.Println("Environment file not found.")
-	}
-
-	databaseURL, err := getDatabaseURL()
-	if err != nil {
-		return []Row{}, 0, 0, err
-	}
+func RunQuery(databaseURL, timezone string, commandCount int) ([]Row, int, int, error) {
 
 	connection, err := openDatabase(databaseURL)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
-	defer connection.Close(context.Background())
+	defer closeDatabase((connection))
 
 	totalCommandCount, err := getTotalCommandCount(connection)
 	if err != nil {
@@ -201,11 +197,6 @@ func RunQuery(commandCount int) ([]Row, int, int, error) {
 	}
 
 	commands, err := getRecentCommands(connection, commandCount)
-	if err != nil {
-		return []Row{}, 0, 0, err
-	}
-
-	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}

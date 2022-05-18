@@ -14,6 +14,7 @@ import (
 	"text/template"
 
 	cockroach "seedno.de/seednode/commands-web/cockroach"
+	utils "seedno.de/seednode/commands-web/utils"
 )
 
 var templateFuncs = template.FuncMap{"rangeStruct": RangeStructer}
@@ -94,8 +95,8 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, commandCount int) error {
-	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(commandCount)
+func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int) error {
+	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount)
 	if err != nil {
 		return err
 	}
@@ -122,21 +123,38 @@ func ConstructPage(w io.Writer, commandCount int) error {
 	return nil
 }
 
-func serveRequest(w http.ResponseWriter, r *http.Request) {
-	commandCount, _ := strconv.Atoi(r.URL.Query().Get("count"))
+func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		commandCount, _ := strconv.Atoi(r.URL.Query().Get("count"))
 
-	if commandCount == 0 {
-		commandCount = 1000
+		if commandCount == 0 {
+			commandCount = 1000
+		}
+
+		w.Header().Add("Content-Type", "text/html")
+		ConstructPage(w, databaseURL, timezone, commandCount)
 	}
-
-	w.Header().Add("Content-Type", "text/html")
-	ConstructPage(w, commandCount)
 }
 
 func doNothing(w http.ResponseWriter, r *http.Request) {}
 
 func ServePage() {
-	http.HandleFunc("/", serveRequest)
+	err := utils.LoadEnv()
+	if err != nil {
+		fmt.Println("Environment file not found.")
+	}
+
+	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
+	if err != nil {
+		panic(err)
+	}
+
+	databaseURL, err := cockroach.GetDatabaseURL()
+	if err != nil {
+		panic(err)
+	}
+
+	http.HandleFunc("/", servePageHandler(databaseURL, timezone))
 	http.HandleFunc("/favicon.ico", doNothing)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
