@@ -23,9 +23,6 @@ var htmlTemplate = `{{range .}}        <tr>
 {{end}}        </tr>
 {{end}}`
 
-// RangeStructer takes the first argument, which must be a struct, and
-// returns the value of each field in a slice. It will return nil
-// if there are no arguments or first argument is not a struct
 func RangeStructer(args ...interface{}) []interface{} {
 	if len(args) == 0 {
 		return nil
@@ -103,7 +100,6 @@ func ConstructPage(w io.Writer, commandCount int) error {
 		return err
 	}
 
-	// We create the template and register out template function
 	t := template.New("t").Funcs(templateFuncs)
 	t, err = t.Parse(htmlTemplate)
 	if err != nil {
@@ -126,21 +122,21 @@ func ConstructPage(w io.Writer, commandCount int) error {
 	return nil
 }
 
+func serveRequest(w http.ResponseWriter, r *http.Request) {
+	commandCount, _ := strconv.Atoi(r.URL.Query().Get("count"))
+
+	if commandCount == 0 {
+		commandCount = 1000
+	}
+
+	w.Header().Add("Content-Type", "text/html")
+	ConstructPage(w, commandCount)
+}
+
 func doNothing(w http.ResponseWriter, r *http.Request) {}
 
 func ServePage() {
-	h1 := func(w http.ResponseWriter, r *http.Request) {
-		commandCount, _ := strconv.Atoi(r.URL.Query().Get("count"))
-
-		if commandCount == 0 {
-			commandCount = 1000
-		}
-
-		w.Header().Add("Content-Type", "text/html")
-		ConstructPage(w, commandCount)
-	}
-
-	http.HandleFunc("/", h1)
+	http.HandleFunc("/", serveRequest)
 	http.HandleFunc("/favicon.ico", doNothing)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
