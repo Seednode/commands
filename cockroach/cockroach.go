@@ -82,6 +82,8 @@ func getDatabaseURL() (string, error) {
 		sslClientCert,
 	)
 
+	fmt.Printf("Set database URL to %v\n", connection)
+
 	return connection, nil
 }
 
@@ -90,6 +92,8 @@ func openDatabase(databaseURL string) (*pgx.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("Opened database")
 
 	return connection, nil
 }
@@ -119,6 +123,8 @@ func getTotalCommandCount(connection *pgx.Conn) (int, error) {
 		return totalCommandCount, err
 	}
 
+	fmt.Printf("Retrieved total command count: %v\n", totalCommandCount)
+
 	return totalCommandCount, nil
 }
 
@@ -130,6 +136,8 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 	if err != nil {
 		return failedCommandCount, err
 	}
+
+	fmt.Printf("Retrieved failed command count: %v\n", failedCommandCount)
 
 	return failedCommandCount, nil
 }
@@ -162,6 +170,8 @@ func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
 		}
 		rowSlice = append(rowSlice, r)
 	}
+
+	fmt.Println("Retrieved recent commands")
 
 	return rowSlice, nil
 }

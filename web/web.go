@@ -126,6 +126,8 @@ func ConstructPage(w io.Writer) error {
 	htmlFooter := GenerateFooter()
 	io.WriteString(w, htmlFooter)
 
+	fmt.Println("Constructed HTML page")
+
 	return nil
 }
 

@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -33,6 +34,8 @@ func GetEnvVar(variable string) (string, error) {
 		err := errors.New("variable " + variable + " is empty. exiting")
 		return "", err
 	}
+
+	fmt.Printf("Set %v to %v\n", variable, v)
 
 	return v, nil
 }
