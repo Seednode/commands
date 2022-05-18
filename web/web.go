@@ -5,10 +5,12 @@ Copyright © 2022 Seednode <seednode@seedno.de>
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	"text/template"
 
 	cockroach "seedno.de/seednode/commands-web/cockroach"
@@ -16,11 +18,9 @@ import (
 
 var templateFuncs = template.FuncMap{"rangeStruct": RangeStructer}
 
-// In the template, we use rangeStruct to turn our struct values
-// into a slice we can iterate over
-var htmlTemplate = `{{range .}}<tr>
-{{range rangeStruct .}} <td>{{.}}</td>
-{{end}}</tr>
+var htmlTemplate = `{{range .}}        <tr>
+{{range rangeStruct .}}          <td>{{.}}</td>
+{{end}}        </tr>
 {{end}}`
 
 // RangeStructer takes the first argument, which must be a struct, and
@@ -44,8 +44,66 @@ func RangeStructer(args ...interface{}) []interface{} {
 	return out
 }
 
+func GenerateHeader(totalCommandCount, failedCommandCount int) string {
+	htmlHeader := `<html>
+  <style>
+    table {
+      border: 2px solid #aaa;
+      table-layout: fixed;
+    }
+    tr:nth-child(even) {
+      background: #f4f4f4;
+    }
+    th,td {
+      padding: 0.1em 0.5em;
+    }
+    td {
+      border: 1px solid #aaa;
+    }
+    th {
+      background: #eee;
+      border: 1px solid #aaa;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+  <head>
+    <title>Command History</title>
+  </head>
+  <body>
+  `
+
+	htmlHeader += fmt.Sprintf("  <h3>Displaying 1000 out of %v commands, including %v non-zero exit codes.</h3>", strconv.Itoa(totalCommandCount), strconv.Itoa(failedCommandCount))
+
+	htmlHeader += `
+    <table>
+      <thead>
+        <tr>
+          <th>start_time</th><th>duration</th><th>host_name</th><th>command_name</th><th>exit_code</th>
+        </tr>
+      </thead>
+      <tbody>
+`
+
+	return htmlHeader
+}
+
+func GenerateFooter() string {
+	htmlFooter := `      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan=6>1000 rows</td>
+        </tr>
+    </tfoot>
+    </table>
+  </body>
+</html>`
+
+	return htmlFooter
+}
+
 func ConstructPage(w io.Writer) error {
-	results, err := cockroach.RunQuery()
+	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery()
 	if err != nil {
 		return err
 	}
@@ -57,38 +115,7 @@ func ConstructPage(w io.Writer) error {
 		return err
 	}
 
-	htmlHeader := `
-<html>
-<style>
-  table {
-	border: 2px solid #aaa;
-	table-layout: fixed;
-  }
-  tr:nth-child(even) {
-	background: #f4f4f4;
-  }
-  th,td {
-	padding: 0.1em 0.5em;
-  }
-  td {
-	border: 1px solid #aaa;
-  }
-  th {
-	background: #eee;
-	border: 1px solid #aaa;
-	font-weight: bold;
-	text-align: center;
-  }
-</style>
-<head>
-  <title>Command History</title>
-</head>
-<body>
-<table>
-<thead><tr><th>start_time</th><th>duration</th><th>host_name</th><th>command_name</th><th>exit_code</th></tr></thead>
-<tbody>
-	`
-
+	htmlHeader := GenerateHeader(totalCommandCount, failedCommandCount)
 	io.WriteString(w, htmlHeader)
 
 	err = t.Execute(w, results)
@@ -96,13 +123,7 @@ func ConstructPage(w io.Writer) error {
 		return err
 	}
 
-	htmlFooter := `
-	</tbody>
-	<tfoot><tr><td colspan=6>1000 rows</td></tr></tfoot></table>
-	  </body>
-	</html>
-`
-
+	htmlFooter := GenerateFooter()
 	io.WriteString(w, htmlFooter)
 
 	return nil

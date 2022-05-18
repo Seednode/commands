@@ -109,7 +109,33 @@ func setTimeZone(oldTime time.Time) (time.Time, error) {
 	return newTime, nil
 }
 
-func createSQLStatement() string {
+func getTotalCommandCount(connection *pgx.Conn) (int, error) {
+	statement := "SELECT COUNT(commandname) FROM logging"
+
+	var totalCommandCount int
+	err := connection.QueryRow(context.Background(), statement).Scan(&totalCommandCount)
+	if err != nil {
+		return totalCommandCount, err
+	}
+
+	return totalCommandCount, nil
+}
+
+func getFailedCommandCount(connection *pgx.Conn) (int, error) {
+	statement := "SELECT COUNT(exitcode) FROM logging WHERE exitcode <> 0"
+
+	var failedCommandCount int
+	err := connection.QueryRow(context.Background(), statement).Scan(&failedCommandCount)
+	if err != nil {
+		return failedCommandCount, err
+	}
+
+	return failedCommandCount, nil
+}
+
+func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
+	rowSlice := []Row{}
+
 	statement := `select 
 	date_trunc('second', starttime) as start_time,
 	date_trunc('second', (age(stoptime, starttime)::time)) as duration,
@@ -119,14 +145,6 @@ func createSQLStatement() string {
 	from logging
 	order by starttime desc
 	limit 1000;`
-
-	return statement
-}
-
-func getCommands(connection *pgx.Conn) ([]Row, error) {
-	rowSlice := []Row{}
-
-	statement := createSQLStatement()
 
 	rows, err := connection.Query(context.Background(), statement)
 	if err != nil {
@@ -146,34 +164,44 @@ func getCommands(connection *pgx.Conn) ([]Row, error) {
 	return rowSlice, nil
 }
 
-func RunQuery() ([]Row, error) {
+func RunQuery() ([]Row, int, int, error) {
 	err := utils.LoadEnv()
 	if err != nil {
-		return []Row{}, err
+		return []Row{}, 0, 0, err
 	}
 
 	databaseURL, err := getDatabaseURL()
 	if err != nil {
-		return []Row{}, err
+		return []Row{}, 0, 0, err
 	}
 
 	connection, err := openDatabase(databaseURL)
 	if err != nil {
-		return []Row{}, err
+		return []Row{}, 0, 0, err
 	}
 	defer connection.Close(context.Background())
 
-	commands, err := getCommands(connection)
+	totalCommandCount, err := getTotalCommandCount(connection)
 	if err != nil {
-		return []Row{}, err
+		return []Row{}, 0, 0, err
+	}
+
+	failedCommandCount, err := getFailedCommandCount(connection)
+	if err != nil {
+		return []Row{}, 0, 0, err
+	}
+
+	commands, err := getRecentCommands(connection)
+	if err != nil {
+		return []Row{}, 0, 0, err
 	}
 
 	for i := range commands {
 		commands[i].StartTime, err = setTimeZone(commands[i].StartTime)
 		if err != nil {
-			return []Row{}, err
+			return []Row{}, 0, 0, err
 		}
 	}
 
-	return commands, nil
+	return commands, totalCommandCount, failedCommandCount, nil
 }
