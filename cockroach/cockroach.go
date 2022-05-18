@@ -7,6 +7,7 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	pgx "github.com/jackc/pgx/v4"
@@ -137,7 +138,7 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 	return failedCommandCount, nil
 }
 
-func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
+func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
 	rowSlice := []Row{}
 
 	statement := `select
@@ -149,7 +150,10 @@ func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
 	exitcode as exit_code
 	from logging
 	order by starttime desc
-	limit 1000;`
+	limit `
+	statement += strconv.Itoa(commandCount) + ";"
+
+	fmt.Printf("%v", statement)
 
 	rows, err := connection.Query(context.Background(), statement)
 	if err != nil {
@@ -171,7 +175,7 @@ func getRecentCommands(connection *pgx.Conn) ([]Row, error) {
 	return rowSlice, nil
 }
 
-func RunQuery() ([]Row, int, int, error) {
+func RunQuery(commandCount int) ([]Row, int, int, error) {
 	err := utils.LoadEnv()
 	if err != nil {
 		fmt.Println("Environment file not found.")
@@ -198,7 +202,7 @@ func RunQuery() ([]Row, int, int, error) {
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommands(connection)
+	commands, err := getRecentCommands(connection, commandCount)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}

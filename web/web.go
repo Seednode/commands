@@ -44,7 +44,7 @@ func RangeStructer(args ...interface{}) []interface{} {
 	return out
 }
 
-func GenerateHeader(totalCommandCount, failedCommandCount int) string {
+func GenerateHeader(commandCount, totalCommandCount, failedCommandCount int) string {
 	htmlHeader := `<html>
   <style>
     table {
@@ -73,7 +73,7 @@ func GenerateHeader(totalCommandCount, failedCommandCount int) string {
   <body>
   `
 
-	htmlHeader += fmt.Sprintf("  <h3>Displaying 1000 out of %v commands, including %v non-zero exit codes.</h3>", strconv.Itoa(totalCommandCount), strconv.Itoa(failedCommandCount))
+	htmlHeader += fmt.Sprintf("  <h3>Displaying %v out of %v commands, including %v non-zero exit codes.</h3>", strconv.Itoa(commandCount), strconv.Itoa(totalCommandCount), strconv.Itoa(failedCommandCount))
 
 	htmlHeader += `
     <table>
@@ -90,11 +90,6 @@ func GenerateHeader(totalCommandCount, failedCommandCount int) string {
 
 func GenerateFooter() string {
 	htmlFooter := `      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan=6>1000 rows</td>
-        </tr>
-    </tfoot>
     </table>
   </body>
 </html>`
@@ -102,8 +97,8 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer) error {
-	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery()
+func ConstructPage(w io.Writer, commandCount int) error {
+	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(commandCount)
 	if err != nil {
 		return err
 	}
@@ -115,7 +110,7 @@ func ConstructPage(w io.Writer) error {
 		return err
 	}
 
-	htmlHeader := GenerateHeader(totalCommandCount, failedCommandCount)
+	htmlHeader := GenerateHeader(commandCount, totalCommandCount, failedCommandCount)
 	io.WriteString(w, htmlHeader)
 
 	err = t.Execute(w, results)
@@ -131,13 +126,22 @@ func ConstructPage(w io.Writer) error {
 	return nil
 }
 
+func doNothing(w http.ResponseWriter, r *http.Request) {}
+
 func ServePage() {
-	h1 := func(w http.ResponseWriter, _ *http.Request) {
+	h1 := func(w http.ResponseWriter, r *http.Request) {
+		commandCount, _ := strconv.Atoi(r.URL.Query().Get("count"))
+
+		if commandCount == 0 {
+			commandCount = 1000
+		}
+
 		w.Header().Add("Content-Type", "text/html")
-		ConstructPage(w)
+		ConstructPage(w, commandCount)
 	}
 
 	http.HandleFunc("/", h1)
+	http.HandleFunc("/favicon.ico", doNothing)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
