@@ -98,12 +98,7 @@ func openDatabase(databaseURL string) (*pgx.Conn, error) {
 	return connection, nil
 }
 
-func setTimeZone(oldTime time.Time) (time.Time, error) {
-	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
-	if err != nil {
-		return oldTime, err
-	}
-
+func setTimeZone(oldTime time.Time, timezone string) (time.Time, error) {
 	location, err := time.LoadLocation(timezone)
 	if err != nil {
 		return oldTime, err
@@ -208,8 +203,13 @@ func RunQuery() ([]Row, int, int, error) {
 		return []Row{}, 0, 0, err
 	}
 
+	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
+	if err != nil {
+		return []Row{}, 0, 0, err
+	}
+
 	for i := range commands {
-		commands[i].StartTime, err = setTimeZone(commands[i].StartTime)
+		commands[i].StartTime, err = setTimeZone(commands[i].StartTime, timezone)
 		if err != nil {
 			return []Row{}, 0, 0, err
 		}
