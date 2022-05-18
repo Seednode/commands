@@ -23,49 +23,49 @@ type Row struct {
 }
 
 func getDatabaseURL() (string, error) {
-	host, err := utils.GetEnvVar("ERRWRAPPER_DB_HOST")
+	host, err := utils.GetEnvVar("COMMANDS_DB_HOST")
 	if err != nil {
 		return "", err
 	}
 	host = "host=" + host
 
-	port, err := utils.GetEnvVar("ERRWRAPPER_DB_PORT")
+	port, err := utils.GetEnvVar("COMMANDS_DB_PORT")
 	if err != nil {
 		return "", err
 	}
 	port = " port=" + port
 
-	user, err := utils.GetEnvVar("ERRWRAPPER_DB_USER")
+	user, err := utils.GetEnvVar("COMMANDS_DB_USER")
 	if err != nil {
 		return "", err
 	}
 	user = " user=" + user
 
-	database, err := utils.GetEnvVar("ERRWRAPPER_DB_NAME")
+	database, err := utils.GetEnvVar("COMMANDS_DB_NAME")
 	if err != nil {
 		return "", err
 	}
 	database = " dbname=" + database
 
-	sslMode, err := utils.GetEnvVar("ERRWRAPPER_DB_SSL_MODE")
+	sslMode, err := utils.GetEnvVar("COMMANDS_DB_SSL_MODE")
 	if err != nil {
 		return "", err
 	}
 	sslMode = " sslmode=" + sslMode
 
-	sslRootCert, err := utils.GetEnvVar("ERRWRAPPER_DB_ROOT_CERT")
+	sslRootCert, err := utils.GetEnvVar("COMMANDS_DB_ROOT_CERT")
 	if err != nil {
 		return "", err
 	}
 	sslRootCert = " sslrootcert=" + sslRootCert
 
-	sslClientKey, err := utils.GetEnvVar("ERRWRAPPER_DB_SSL_KEY")
+	sslClientKey, err := utils.GetEnvVar("COMMANDS_DB_SSL_KEY")
 	if err != nil {
 		return "", err
 	}
 	sslClientKey = " sslkey=" + sslClientKey
 
-	sslClientCert, err := utils.GetEnvVar("ERRWRAPPER_DB_SSL_CERT")
+	sslClientCert, err := utils.GetEnvVar("COMMANDS_DB_SSL_CERT")
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +95,7 @@ func openDatabase(databaseURL string) (*pgx.Conn, error) {
 }
 
 func setTimeZone(oldTime time.Time) (time.Time, error) {
-	timezone, err := utils.GetEnvVar("ERRWRAPPER_TZ")
+	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
 	if err != nil {
 		return oldTime, err
 	}
