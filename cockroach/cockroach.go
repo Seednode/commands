@@ -153,8 +153,6 @@ func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
 	limit `
 	statement += strconv.Itoa(commandCount) + ";"
 
-	fmt.Printf("%v", statement)
-
 	rows, err := connection.Query(context.Background(), statement)
 	if err != nil {
 		return rowSlice, err
@@ -170,7 +168,7 @@ func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
 		rowSlice = append(rowSlice, r)
 	}
 
-	fmt.Println("Retrieved recent commands")
+	fmt.Printf("Retrieved %v recent commands.", len(rowSlice))
 
 	return rowSlice, nil
 }
