@@ -201,14 +201,14 @@ func RunQuery(databaseURL, timezone string, commandCount int) ([]Row, int, int, 
 		return []Row{}, 0, 0, err
 	}
 
-	for i := range commands {
-		commands[i].StartTime, err = setTimeZone(commands[i].StartTime, timezone)
-		if err != nil {
-			return []Row{}, 0, 0, err
-		}
-	}
+	//	for i := range commands {
+	//		commands[i].StartTime, err = setTimeZone(commands[i].StartTime, timezone)
+	//		if err != nil {
+	//			return []Row{}, 0, 0, err
+	//		}
+	//	}
 
-	fmt.Println("Formatted time zones")
+	//	fmt.Println("Formatted time zones")
 
 	return commands, totalCommandCount, failedCommandCount, nil
 }
