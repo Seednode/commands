@@ -1,6 +1,6 @@
 module seedno.de/seednode/commands-web
 
-go 1.17
+go 1.18
 
 require (
 	github.com/jackc/pgx/v4 v4.16.1
@@ -16,6 +16,6 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jackc/pgtype v1.11.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167 // indirect
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
