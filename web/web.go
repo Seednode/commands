@@ -96,10 +96,10 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int) error {
+func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int, exitCode int) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount)
+	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode)
 	if err != nil {
 		return err
 	}
@@ -133,13 +133,17 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int) 
 func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		commandCount, _ := strconv.Atoi(r.URL.Query().Get("count"))
-
 		if commandCount == 0 {
 			commandCount = 1000
 		}
 
+		exitCode, _ := strconv.Atoi(r.URL.Query().Get("exitcode"))
+		if exitCode == 0 {
+			exitCode = -1
+		}
+
 		w.Header().Add("Content-Type", "text/html")
-		ConstructPage(w, databaseURL, timezone, commandCount)
+		ConstructPage(w, databaseURL, timezone, commandCount, exitCode)
 	}
 }
 

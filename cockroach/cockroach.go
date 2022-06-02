@@ -136,7 +136,7 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 	return failedCommandCount, nil
 }
 
-func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
+func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int) ([]Row, error) {
 	rowSlice := []Row{}
 
 	statement := `select
@@ -149,7 +149,13 @@ func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
 	from logging
 	order by starttime desc
 	limit `
-	statement += strconv.Itoa(commandCount) + ";"
+	statement += strconv.Itoa(commandCount)
+
+	if exitCode != -1 {
+		statement += fmt.Sprintf("\nwhere exitcode == %q", exitCode)
+	}
+
+	statement += ";"
 
 	rows, err := connection.Query(context.Background(), statement)
 	if err != nil {
@@ -169,7 +175,7 @@ func getRecentCommands(connection *pgx.Conn, commandCount int) ([]Row, error) {
 	return rowSlice, nil
 }
 
-func RunQuery(databaseURL, timezone string, commandCount int) ([]Row, int, int, error) {
+func RunQuery(databaseURL, timezone string, commandCount int, exitCode int) ([]Row, int, int, error) {
 
 	connection, err := openDatabase(databaseURL)
 	if err != nil {
@@ -187,7 +193,7 @@ func RunQuery(databaseURL, timezone string, commandCount int) ([]Row, int, int, 
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommands(connection, commandCount)
+	commands, err := getRecentCommands(connection, commandCount, exitCode)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
