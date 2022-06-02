@@ -160,6 +160,11 @@ func ServePage() {
 		panic(err)
 	}
 
+	port, err := utils.GetEnvVar("COMMANDS_PORT")
+	if err != nil {
+		port = "8080"
+	}
+
 	databaseURL, err := cockroach.GetDatabaseURL()
 	if err != nil {
 		panic(err)
@@ -168,5 +173,5 @@ func ServePage() {
 	http.HandleFunc("/", servePageHandler(databaseURL, timezone))
 	http.HandleFunc("/favicon.ico", doNothing)
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
