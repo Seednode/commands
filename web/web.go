@@ -97,10 +97,10 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exitCode int, hostName string) error {
+func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exitCode int, hostName, commandName string) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName)
+	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName, commandName)
 	if err != nil {
 		return err
 	}
@@ -140,15 +140,17 @@ func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 		}
 
 		var exitCode int = -1
-		exitCodeVar := r.URL.Query().Get("exitcode")
+		exitCodeVar := r.URL.Query().Get("exit_code")
 		if exitCodeVar != "" {
-			exitCode, _ = strconv.Atoi(r.URL.Query().Get("exitcode"))
+			exitCode, _ = strconv.Atoi(r.URL.Query().Get("exit_code"))
 		}
 
-		hostName := r.URL.Query().Get("hostname")
+		hostName := r.URL.Query().Get("host_name")
+
+		commandName := r.URL.Query().Get("command_name")
 
 		w.Header().Add("Content-Type", "text/html")
-		err := ConstructPage(w, databaseURL, timezone, commandCount, exitCode, hostName)
+		err := ConstructPage(w, databaseURL, timezone, commandCount, exitCode, hostName, commandName)
 		if err != nil {
 			fmt.Println(err)
 		}
