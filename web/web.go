@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"text/template"
@@ -96,10 +97,10 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int, exitCode int) error {
+func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exitCode int, hostName string) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode)
+	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName)
 	if err != nil {
 		return err
 	}
@@ -132,18 +133,25 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount int, 
 
 func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		commandCount, _ := strconv.Atoi(r.URL.Query().Get("count"))
-		if commandCount == 0 {
-			commandCount = 1000
+		var commandCount int = 1000
+		commandCountVar := r.URL.Query().Get("count")
+		if commandCountVar != "" {
+			commandCount, _ = strconv.Atoi(commandCountVar)
 		}
 
-		exitCode, _ := strconv.Atoi(r.URL.Query().Get("exitcode"))
-		if exitCode == 0 {
-			exitCode = -1
+		var exitCode int = -1
+		exitCodeVar := r.URL.Query().Get("exitcode")
+		if exitCodeVar != "" {
+			exitCode, _ = strconv.Atoi(r.URL.Query().Get("exitcode"))
 		}
+
+		hostName := r.URL.Query().Get("hostname")
 
 		w.Header().Add("Content-Type", "text/html")
-		ConstructPage(w, databaseURL, timezone, commandCount, exitCode)
+		err := ConstructPage(w, databaseURL, timezone, commandCount, exitCode, hostName)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
@@ -153,21 +161,23 @@ func ServePage() {
 	err := utils.LoadEnv()
 	if err != nil {
 		fmt.Println("Environment file not found.")
+		os.Exit(1)
+	}
+
+	databaseURL, err := cockroach.GetDatabaseURL()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
 	if err != nil {
-		panic(err)
+		timezone = "UTC"
 	}
 
 	port, err := utils.GetEnvVar("COMMANDS_PORT")
 	if err != nil {
 		port = "8080"
-	}
-
-	databaseURL, err := cockroach.GetDatabaseURL()
-	if err != nil {
-		panic(err)
 	}
 
 	http.HandleFunc("/", servePageHandler(databaseURL, timezone))

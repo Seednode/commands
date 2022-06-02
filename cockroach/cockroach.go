@@ -136,26 +136,48 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 	return failedCommandCount, nil
 }
 
-func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int) ([]Row, error) {
+func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hostName string) ([]Row, error) {
 	rowSlice := []Row{}
 
-	statement := `select
+	var whereClauses int = 0
+
+	statement := `
+	select
 	row_number() over() as row,
 	date_trunc('second', starttime) as start_time,
 	date_trunc('second', (age(stoptime, starttime)::time)) as duration,
 	hostname as host_name,
 	commandname as command_name,
 	exitcode as exit_code
-	from logging
+	from logging`
+
+	if exitCode != -1 {
+		if whereClauses == 0 {
+			statement += fmt.Sprint("\n	where ")
+		} else {
+			statement += fmt.Sprint("\n	and ")
+		}
+		statement += fmt.Sprintf("exitcode = '%v'", exitCode)
+		whereClauses += 1
+	}
+
+	if hostName != "" {
+		if whereClauses == 0 {
+			statement += fmt.Sprint("\n	where ")
+		} else {
+			statement += fmt.Sprint("\n	and ")
+		}
+		statement += fmt.Sprintf("hostname = '%v'", hostName)
+		whereClauses += 1
+	}
+
+	statement += `
 	order by starttime desc
 	limit `
 	statement += strconv.Itoa(commandCount)
-
-	if exitCode != -1 {
-		statement += fmt.Sprintf("\nwhere exitcode == %q", exitCode)
-	}
-
 	statement += ";"
+
+	fmt.Println(statement)
 
 	rows, err := connection.Query(context.Background(), statement)
 	if err != nil {
@@ -175,7 +197,7 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int) ([]
 	return rowSlice, nil
 }
 
-func RunQuery(databaseURL, timezone string, commandCount int, exitCode int) ([]Row, int, int, error) {
+func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, hostName string) ([]Row, int, int, error) {
 
 	connection, err := openDatabase(databaseURL)
 	if err != nil {
@@ -193,7 +215,7 @@ func RunQuery(databaseURL, timezone string, commandCount int, exitCode int) ([]R
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommands(connection, commandCount, exitCode)
+	commands, err := getRecentCommands(connection, commandCount, exitCode, hostName)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
