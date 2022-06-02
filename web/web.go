@@ -73,7 +73,7 @@ func GenerateHeader(commandCount, totalCommandCount, failedCommandCount int) str
   <body>
   `
 
-	htmlHeader += fmt.Sprintf("  <h3>Displaying %v out of %v commands, including %v non-zero exit codes.</h3>", strconv.Itoa(commandCount), strconv.Itoa(totalCommandCount), strconv.Itoa(failedCommandCount))
+	htmlHeader += fmt.Sprintf("  <h3>Displaying up to %v out of %v commands, including %v non-zero exit codes.</h3>", strconv.Itoa(commandCount), strconv.Itoa(totalCommandCount), strconv.Itoa(failedCommandCount))
 
 	htmlHeader += `
     <table>
@@ -97,10 +97,10 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exitCode int, hostName, commandName string) error {
+func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exitCode int, hostName, commandName, sortBy, sortOrder string) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName, commandName)
+	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exit
 	htmlFooter := GenerateFooter()
 	io.WriteString(w, htmlFooter)
 
-	fmt.Printf("Constructed HTML page for %v commands (%v total, %v failed) in %v.\n",
+	fmt.Printf("Constructed HTML page for up to %v commands (%v total, %v failed) in %v.\n",
 		commandCount,
 		totalCommandCount,
 		failedCommandCount,
@@ -133,24 +133,43 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exit
 
 func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var commandCount int = 1000
-		commandCountVar := r.URL.Query().Get("count")
-		if commandCountVar != "" {
-			commandCount, _ = strconv.Atoi(commandCountVar)
+		var commandCount int
+		commandCount, err := strconv.Atoi(r.URL.Query().Get("count"))
+		if err != nil {
+			commandCount = 1000
 		}
 
-		var exitCode int = -1
-		exitCodeVar := r.URL.Query().Get("exit_code")
-		if exitCodeVar != "" {
-			exitCode, _ = strconv.Atoi(r.URL.Query().Get("exit_code"))
+		var exitCode int
+		exitCode, err = strconv.Atoi(r.URL.Query().Get("exit_code"))
+		if err != nil {
+			exitCode = -1
 		}
 
 		hostName := r.URL.Query().Get("host_name")
 
 		commandName := r.URL.Query().Get("command_name")
 
+		sortBy := r.URL.Query().Get("sort_by")
+		switch sortBy {
+		case "duration":
+			sortBy = "duration"
+		case "host_name":
+			sortBy = "hostname"
+		case "command_name":
+			sortBy = "commandname"
+		case "exit_code":
+			sortBy = "exitcode"
+		default:
+			sortBy = "starttime"
+		}
+
+		sortOrder := r.URL.Query().Get("sort_order")
+		if sortOrder != "asc" {
+			sortOrder = "desc"
+		}
+
 		w.Header().Add("Content-Type", "text/html")
-		err := ConstructPage(w, databaseURL, timezone, commandCount, exitCode, hostName, commandName)
+		err = ConstructPage(w, databaseURL, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 		if err != nil {
 			fmt.Println(err)
 		}

@@ -136,26 +136,26 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 	return failedCommandCount, nil
 }
 
-func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hostName, commandName string) ([]Row, error) {
+func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, error) {
 	rowSlice := []Row{}
 
 	var whereClauses int = 0
 
-	statement := `
-	select
-	row_number() over() as row,
-	date_trunc('second', starttime) as start_time,
-	date_trunc('second', (age(stoptime, starttime)::time)) as duration,
-	hostname as host_name,
-	commandname as command_name,
-	exitcode as exit_code
-	from logging`
+	statement := fmt.Sprintf("%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v",
+		"select",
+		"row_number() over() as row,",
+		"date_trunc('second', starttime) as start_time,",
+		"date_trunc('second', (age(stoptime, starttime)::time)) as duration,",
+		"hostname as host_name,",
+		"commandname as command_name,",
+		"exitcode as exit_code",
+		"from logging")
 
 	if exitCode != -1 {
 		if whereClauses == 0 {
-			statement += fmt.Sprint("\n	where ")
+			statement += fmt.Sprint("\nwhere ")
 		} else {
-			statement += fmt.Sprint("\n	and ")
+			statement += fmt.Sprint("\nand ")
 		}
 		statement += fmt.Sprintf("exitcode = '%v'", exitCode)
 		whereClauses += 1
@@ -163,9 +163,9 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 
 	if hostName != "" {
 		if whereClauses == 0 {
-			statement += fmt.Sprint("\n	where ")
+			statement += fmt.Sprint("\nwhere ")
 		} else {
-			statement += fmt.Sprint("\n	and ")
+			statement += fmt.Sprint("\nand ")
 		}
 		statement += fmt.Sprintf("hostname = '%v'", hostName)
 		whereClauses += 1
@@ -173,21 +173,18 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 
 	if commandName != "" {
 		if whereClauses == 0 {
-			statement += fmt.Sprint("\n	where ")
+			statement += fmt.Sprint("\nwhere ")
 		} else {
-			statement += fmt.Sprint("\n	and ")
+			statement += fmt.Sprint("\nand ")
 		}
 		statement += fmt.Sprintf("commandname like '%%%v%%'", commandName)
 		whereClauses += 1
 	}
 
-	statement += `
-	order by starttime desc
-	limit `
-	statement += strconv.Itoa(commandCount)
-	statement += ";"
+	statement += fmt.Sprintf("\norder by %v %v\n", sortBy, sortOrder)
+	statement += fmt.Sprintf("limit %v;", strconv.Itoa(commandCount))
 
-	fmt.Println(statement)
+	fmt.Printf("\n%v\n\n", statement)
 
 	rows, err := connection.Query(context.Background(), statement)
 	if err != nil {
@@ -207,7 +204,7 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 	return rowSlice, nil
 }
 
-func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, hostName, commandName string) ([]Row, int, int, error) {
+func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, int, int, error) {
 
 	connection, err := openDatabase(databaseURL)
 	if err != nil {
@@ -225,7 +222,7 @@ func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, host
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommands(connection, commandCount, exitCode, hostName, commandName)
+	commands, err := getRecentCommands(connection, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
