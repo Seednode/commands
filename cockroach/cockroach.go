@@ -224,11 +224,11 @@ func prepareStatement(connection *pgx.Conn, hostName, commandName, sortBy, sortO
 	commandname as command_name,
 	exitcode as exit_code
 	from logging
-	where exitcode $1::string $2::int and
+	where exitcode $1::string $2::string and
 	where hostname $3::string $4::string and
 	where commandname $5::string $6::string
-	order by $7 $8
-	limit $9;`)
+	order by $7::string $8::string
+	limit $9::int;`)
 	if err != nil {
 		return "", err
 	}
