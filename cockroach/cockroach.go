@@ -14,17 +14,6 @@ import (
 	utils "seedno.de/seednode/commands-web/utils"
 )
 
-type Arguments struct {
-	ExitCodeOperator    string
-	ExitCodeValue       string
-	HostNameOperator    string
-	HostNameValue       string
-	CommandNameOperator string
-	CommandNameValue    string
-	SortBy              string
-	SortOrder           string
-}
-
 type Row struct {
 	RowNumber   int
 	StartTime   time.Time
@@ -164,9 +153,9 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 
 	if exitCode != -1 {
 		if whereClauses == 0 {
-			statement += "\nwhere "
+			statement += fmt.Sprint("\nwhere ")
 		} else {
-			statement += "\nand "
+			statement += fmt.Sprint("\nand ")
 		}
 		statement += fmt.Sprintf("exitcode = '%v'", exitCode)
 		whereClauses += 1
@@ -174,9 +163,9 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 
 	if hostName != "" {
 		if whereClauses == 0 {
-			statement += "\nwhere "
+			statement += fmt.Sprint("\nwhere ")
 		} else {
-			statement += "\nand "
+			statement += fmt.Sprint("\nand ")
 		}
 		statement += fmt.Sprintf("hostname = '%v'", hostName)
 		whereClauses += 1
@@ -184,9 +173,9 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 
 	if commandName != "" {
 		if whereClauses == 0 {
-			statement += "\nwhere "
+			statement += fmt.Sprint("\nwhere ")
 		} else {
-			statement += "\nand "
+			statement += fmt.Sprint("\nand ")
 		}
 		statement += fmt.Sprintf("commandname like '%%%v%%'", commandName)
 		whereClauses += 1
@@ -198,95 +187,6 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 	fmt.Printf("\n%v\n\n", statement)
 
 	rows, err := connection.Query(context.Background(), statement)
-	if err != nil {
-		return rowSlice, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var r Row
-		err := rows.Scan(&r.RowNumber, &r.StartTime, &r.Duration, &r.HostName, &r.CommandName, &r.ExitCode)
-		if err != nil {
-			return rowSlice, err
-		}
-		rowSlice = append(rowSlice, r)
-	}
-
-	return rowSlice, nil
-}
-
-func prepareStatement(connection *pgx.Conn, hostName, commandName, sortBy, sortOrder string) (string, error) {
-	p, err := connection.Prepare(context.Background(), "getRecentCommands", `select
-	row_number() over() as row,
-	date_trunc('second', starttime) as start_time,
-	date_trunc('second', (age(stoptime, starttime)::time)) as duration,
-	hostname as host_name,
-	commandname as command_name,
-	exitcode as exit_code
-	from logging
-	where exitcode $1::string $2::string and
-	where hostname $3::string $4::string and
-	where commandname $5::string $6::string
-	order by $7::string $8::string
-	limit $9::int;`)
-	if err != nil {
-		return "", err
-	}
-
-	return p.SQL, nil
-}
-
-func prepareArguments(exitCode int, hostName, commandName string) Arguments {
-	arguments := Arguments{}
-
-	exitCodeString := strconv.Itoa(exitCode)
-	if exitCodeString != "" {
-		arguments.ExitCodeOperator = "="
-		arguments.ExitCodeValue = exitCodeString
-	} else {
-		arguments.ExitCodeOperator = "like"
-		arguments.ExitCodeValue = "%%"
-	}
-
-	if hostName != "" {
-		arguments.HostNameOperator = "="
-		arguments.HostNameValue = hostName
-	} else {
-		arguments.HostNameOperator = "like"
-		arguments.HostNameValue = "%%"
-	}
-
-	if commandName != "" {
-		arguments.CommandNameOperator = "like"
-		arguments.CommandNameValue = "%%commandName%%"
-	} else {
-		arguments.CommandNameOperator = "like"
-		arguments.CommandNameValue = "%%"
-	}
-
-	return arguments
-}
-
-func getRecentCommandsNew(connection *pgx.Conn, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, error) {
-	rowSlice := []Row{}
-
-	statement, err := prepareStatement(connection, hostName, commandName, sortBy, sortOrder)
-	if err != nil {
-		return rowSlice, err
-	}
-
-	arguments := prepareArguments(exitCode, hostName, commandName)
-
-	rows, err := connection.Query(context.Background(),
-		statement,
-		arguments.ExitCodeOperator,
-		arguments.ExitCodeValue,
-		arguments.HostNameOperator,
-		arguments.HostNameValue,
-		arguments.CommandNameOperator,
-		arguments.CommandNameValue,
-		sortBy, sortOrder,
-		commandCount)
 	if err != nil {
 		return rowSlice, err
 	}
@@ -322,7 +222,7 @@ func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, host
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommandsNew(connection, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+	commands, err := getRecentCommands(connection, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
