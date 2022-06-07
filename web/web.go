@@ -15,7 +15,7 @@ import (
 	"text/template"
 	"time"
 
-	cockroach "seedno.de/seednode/commands-web/cockroach"
+	"seedno.de/seednode/commands-web/cockroach"
 	utils "seedno.de/seednode/commands-web/utils"
 )
 
@@ -112,7 +112,10 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exit
 	}
 
 	htmlHeader := GenerateHeader(commandCount, totalCommandCount, failedCommandCount)
-	io.WriteString(w, htmlHeader)
+	_, err = io.WriteString(w, htmlHeader)
+	if err != nil {
+		return err
+	}
 
 	err = t.Execute(w, results)
 	if err != nil {
@@ -120,7 +123,10 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exit
 	}
 
 	htmlFooter := GenerateFooter()
-	io.WriteString(w, htmlFooter)
+	_, err = io.WriteString(w, htmlFooter)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("Constructed HTML page for up to %v commands (%v total, %v failed) in %v.\n",
 		commandCount,
@@ -176,7 +182,7 @@ func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 	}
 }
 
-func doNothing(w http.ResponseWriter, r *http.Request) {}
+func doNothing(http.ResponseWriter, *http.Request) {}
 
 func ServePage() {
 	err := utils.LoadEnv()

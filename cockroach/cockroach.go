@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	pgx "github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4"
 	utils "seedno.de/seednode/commands-web/utils"
 )
 
@@ -97,8 +97,13 @@ func openDatabase(databaseURL string) (*pgx.Conn, error) {
 	return connection, nil
 }
 
-func closeDatabase(connection *pgx.Conn) {
-	connection.Close(context.Background())
+func closeDatabase(connection *pgx.Conn) error {
+	err := connection.Close(context.Background())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func setTimeZone(oldTime time.Time, timezone string) (time.Time, error) {
@@ -137,9 +142,9 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 }
 
 func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, error) {
-	rowSlice := []Row{}
+	var rowSlice []Row
 
-	var whereClauses int = 0
+	var whereClauses = 0
 
 	statement := fmt.Sprintf("%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v",
 		"select",
@@ -152,12 +157,7 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 		"from logging")
 
 	if exitCode != -1 {
-		if whereClauses == 0 {
-			statement += fmt.Sprint("\nwhere ")
-		} else {
-			statement += fmt.Sprint("\nand ")
-		}
-		statement += fmt.Sprintf("exitcode = '%v'", exitCode)
+		statement += fmt.Sprintf("\nwhere exitcode = '%v'", exitCode)
 		whereClauses += 1
 	}
 
@@ -210,7 +210,12 @@ func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, host
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
-	defer closeDatabase((connection))
+	defer func(connection *pgx.Conn) {
+		err := closeDatabase(connection)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(connection)
 
 	totalCommandCount, err := getTotalCommandCount(connection)
 	if err != nil {
