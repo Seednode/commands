@@ -163,9 +163,9 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 
 	if hostName != "" {
 		if whereClauses == 0 {
-			statement += fmt.Sprint("\nwhere ")
+			statement += "\nwhere "
 		} else {
-			statement += fmt.Sprint("\nand ")
+			statement += "\nand "
 		}
 		statement += fmt.Sprintf("hostname = '%v'", hostName)
 		whereClauses += 1
@@ -173,9 +173,9 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 
 	if commandName != "" {
 		if whereClauses == 0 {
-			statement += fmt.Sprint("\nwhere ")
+			statement += "\nwhere "
 		} else {
-			statement += fmt.Sprint("\nand ")
+			statement += "\nand "
 		}
 		statement += fmt.Sprintf("commandname like '%%%v%%'", commandName)
 		whereClauses += 1
