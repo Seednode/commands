@@ -14,7 +14,6 @@ platforms=(
   "windows/amd64"
 )
 
-
 for platform in "${platforms[@]}"; do
   IFS=" " read -r -a platform_split <<< "${platform//\// }"
   GOOS="${platform_split[0]}"
