@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-package_name="commands-web"
+package_name="commands"
 mkdir -p builds
 
 platforms=(
