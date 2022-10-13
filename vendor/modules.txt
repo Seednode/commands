@@ -30,10 +30,10 @@ github.com/jackc/pgx/v4/internal/sanitize
 github.com/joho/godotenv
 # github.com/pkg/errors v0.9.1
 ## explicit
-# golang.org/x/crypto v0.0.0-20221010152910-d6f0a8c073c2
+# golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
 ## explicit; go 1.17
 golang.org/x/crypto/pbkdf2
-# golang.org/x/text v0.3.7
+# golang.org/x/text v0.3.8
 ## explicit; go 1.17
 golang.org/x/text/cases
 golang.org/x/text/internal
