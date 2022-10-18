@@ -17,5 +17,5 @@ require (
 	github.com/jackc/pgtype v1.12.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/text v0.4.0 // indirect
 )
