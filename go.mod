@@ -3,7 +3,7 @@ module seedno.de/seednode/commands-web
 go 1.19
 
 require (
-	github.com/jackc/pgx/v4 v4.18.0
+	github.com/jackc/pgx/v4 v4.18.1
 	github.com/joho/godotenv v1.5.1
 )
 
