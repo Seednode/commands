@@ -185,7 +185,7 @@ func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 func doNothing(http.ResponseWriter, *http.Request) {}
 
 func ServePage() error {
-	dbType, err := utils.GetEnvVar("COMMANDS_DB_TYPE")
+	dbType, err := utils.GetEnvVar("COMMANDS_DB_TYPE", false)
 	if err != nil {
 		return err
 	}
@@ -199,12 +199,12 @@ func ServePage() error {
 		return err
 	}
 
-	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
+	timezone, err := utils.GetEnvVar("COMMANDS_TZ", false)
 	if err != nil {
 		timezone = "UTC"
 	}
 
-	port, err := utils.GetEnvVar("COMMANDS_PORT")
+	port, err := utils.GetEnvVar("COMMANDS_PORT", false)
 	if err != nil {
 		port = "8080"
 	}

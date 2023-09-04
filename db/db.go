@@ -27,65 +27,63 @@ type Row struct {
 func GetDatabaseURL(dbType string) (string, error) {
 	var url strings.Builder
 
-	host, err := utils.GetEnvVar("COMMANDS_DB_HOST")
+	host, err := utils.GetEnvVar("COMMANDS_DB_HOST", false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString("host=" + host)
 
-	port, err := utils.GetEnvVar("COMMANDS_DB_PORT")
+	port, err := utils.GetEnvVar("COMMANDS_DB_PORT", false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" port=" + port)
 
-	user, err := utils.GetEnvVar("COMMANDS_DB_USER")
+	user, err := utils.GetEnvVar("COMMANDS_DB_USER", false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" user=" + user)
 
 	if dbType == "postgresql" {
-		pass, err := utils.GetEnvVar("COMMANDS_DB_PASS")
+		pass, err := utils.GetEnvVar("COMMANDS_DB_PASS", true)
 		if err != nil {
 			return "", err
 		}
 		url.WriteString(" password=" + pass)
 	}
 
-	database, err := utils.GetEnvVar("COMMANDS_DB_NAME")
+	database, err := utils.GetEnvVar("COMMANDS_DB_NAME", false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" dbname=" + database)
 
-	sslMode, err := utils.GetEnvVar("COMMANDS_DB_SSL_MODE")
+	sslMode, err := utils.GetEnvVar("COMMANDS_DB_SSL_MODE", false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" sslmode=" + sslMode)
 
 	if dbType == "cockroachdb" {
-		sslRootCert, err := utils.GetEnvVar("COMMANDS_DB_ROOT_CERT")
+		sslRootCert, err := utils.GetEnvVar("COMMANDS_DB_ROOT_CERT", false)
 		if err != nil {
 			return "", err
 		}
 		url.WriteString(" sslrootcert=" + sslRootCert)
 
-		sslClientKey, err := utils.GetEnvVar("COMMANDS_DB_SSL_KEY")
+		sslClientKey, err := utils.GetEnvVar("COMMANDS_DB_SSL_KEY", false)
 		if err != nil {
 			return "", err
 		}
 		url.WriteString(" sslkey=" + sslClientKey)
 
-		sslClientCert, err := utils.GetEnvVar("COMMANDS_DB_SSL_CERT")
+		sslClientCert, err := utils.GetEnvVar("COMMANDS_DB_SSL_CERT", false)
 		if err != nil {
 			return "", err
 		}
 		url.WriteString(" sslcert=" + sslClientCert)
 	}
-
-	fmt.Printf("Set database URL to %v\n", url.String())
 
 	return url.String(), nil
 }
