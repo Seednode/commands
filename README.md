@@ -1,12 +1,16 @@
-## Creating the table
+# Creating the table
 In this example, I'll be using the wonderful [usql](https://github.com/xubingnan123/usql) client.
 
-# Connect to the database:
+## Connect to the database:
 To connect, run the following, adjusting variables as needed:
 
 `usql postgres://${COMMANDS_DB_USER}@${COMMANDS_DB_HOST}:${COMMANDS_DB_PORT}/${COMMANDS_DB_NAME}`
 
-# Create logging table
+You should then be at a SQL prompt that looks something like the following:
+
+`pg:commands@db/logging=>`
+
+## Create logging table
 To create a table with the proper structure, run the following (as always, adjusting variables as needed):
 ```
 CREATE TABLE ${COMMANDS_DB_TABLE} (
@@ -19,7 +23,7 @@ CREATE TABLE ${COMMANDS_DB_TABLE} (
 );
 ```
 
-# Configure the container
+## Configure the container
 The following environment variables are used to configure the service:
 ```
 COMMANDS_DB_TYPE=
