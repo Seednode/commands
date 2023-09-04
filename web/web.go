@@ -185,11 +185,6 @@ func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 func doNothing(http.ResponseWriter, *http.Request) {}
 
 func ServePage() error {
-	err := utils.LoadEnv()
-	if err != nil {
-		return err
-	}
-
 	dbType, err := utils.GetEnvVar("COMMANDS_DB_TYPE")
 	if err != nil {
 		return err
