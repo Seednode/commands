@@ -27,7 +27,6 @@ var (
 	TimeZone         string
 	bind             string
 	port             uint16
-	verbose          bool
 	version          bool
 
 	rootCmd = &cobra.Command{
@@ -69,7 +68,6 @@ func init() {
 	rootCmd.Flags().StringVar(&TimeZone, "time-zone", "", "timezone to use")
 	rootCmd.Flags().StringVarP(&bind, "bind", "b", "0.0.0.0", "address to bind to")
 	rootCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "port to listen on")
-	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "log http errors to stdout")
 	rootCmd.Flags().BoolVarP(&version, "version", "V", false, "display version and exit")
 	rootCmd.Flags().SetInterspersed(true)
 
