@@ -20,6 +20,15 @@ type Database struct {
 	Table string
 }
 
+type Parameters struct {
+	CommandCount int
+	ExitCode     int
+	HostName     string
+	CommandName  string
+	SortBy       string
+	SortOrder    string
+}
+
 type Row struct {
 	RowNumber   int
 	StartTime   time.Time
@@ -135,7 +144,7 @@ func getFailedCommandCount(connection *pgx.Conn, tableName string) (int, error) 
 	return failedCommandCount, nil
 }
 
-func getRecentCommands(connection *pgx.Conn, tableName string, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, error) {
+func getRecentCommands(connection *pgx.Conn, tableName string, parameters *Parameters) ([]Row, error) {
 	var rowSlice []Row
 
 	var whereClauses = 0
@@ -150,33 +159,33 @@ func getRecentCommands(connection *pgx.Conn, tableName string, commandCount int,
 		"exitcode as exit_code",
 		"from", tableName)
 
-	if exitCode != -1 {
-		statement += fmt.Sprintf("\nwhere exitcode = '%v'", exitCode)
+	if parameters.ExitCode != -1 {
+		statement += fmt.Sprintf("\nwhere exitcode = '%v'", parameters.ExitCode)
 		whereClauses += 1
 	}
 
-	if hostName != "" {
+	if parameters.HostName != "" {
 		if whereClauses == 0 {
 			statement += "\nwhere "
 		} else {
 			statement += "\nand "
 		}
-		statement += fmt.Sprintf("hostname = '%v'", hostName)
+		statement += fmt.Sprintf("hostname = '%v'", parameters.HostName)
 		whereClauses += 1
 	}
 
-	if commandName != "" {
+	if parameters.CommandName != "" {
 		if whereClauses == 0 {
 			statement += "\nwhere "
 		} else {
 			statement += "\nand "
 		}
-		statement += fmt.Sprintf("commandname like '%%%v%%'", commandName)
+		statement += fmt.Sprintf("commandname like '%%%v%%'", parameters.CommandName)
 		whereClauses += 1
 	}
 
-	statement += fmt.Sprintf("\norder by %v %v\n", sortBy, sortOrder)
-	statement += fmt.Sprintf("limit %v;", strconv.Itoa(commandCount))
+	statement += fmt.Sprintf("\norder by %v %v\n", parameters.SortBy, parameters.SortOrder)
+	statement += fmt.Sprintf("limit %v;", strconv.Itoa(parameters.CommandCount))
 
 	fmt.Printf("\n%v\n\n", statement)
 
@@ -198,7 +207,7 @@ func getRecentCommands(connection *pgx.Conn, tableName string, commandCount int,
 	return rowSlice, nil
 }
 
-func RunQuery(database *Database, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, int, int, error) {
+func RunQuery(database *Database, parameters *Parameters) ([]Row, int, int, error) {
 	connection, err := openDatabase(database.Url)
 	if err != nil {
 		return []Row{}, 0, 0, err
@@ -220,7 +229,7 @@ func RunQuery(database *Database, commandCount int, exitCode int, hostName, comm
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommands(connection, database.Table, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+	commands, err := getRecentCommands(connection, database.Table, parameters)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
