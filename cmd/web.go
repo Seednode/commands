@@ -2,11 +2,14 @@
 Copyright © 2022 Seednode <seednode@seedno.de>
 */
 
-package web
+package cmd
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -14,7 +17,6 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	db "seedno.de/seednode/commands-web/db"
 )
 
 var templateFuncs = template.FuncMap{"rangeStruct": RangeStructer}
@@ -95,10 +97,10 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, database *db.Database, parameters *db.Parameters) error {
+func ConstructPage(w io.Writer, database *Database, parameters *Parameters) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := db.RunQuery(database, parameters)
+	results, totalCommandCount, failedCommandCount, err := RunQuery(database, parameters)
 	if err != nil {
 		return err
 	}
@@ -135,7 +137,7 @@ func ConstructPage(w io.Writer, database *db.Database, parameters *db.Parameters
 	return nil
 }
 
-func ServePageHandler(database *db.Database) httprouter.Handle {
+func ServePageHandler(database *Database) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var commandCount int
 		commandCount, err := strconv.Atoi(r.URL.Query().Get("count"))
@@ -172,7 +174,7 @@ func ServePageHandler(database *db.Database) httprouter.Handle {
 			sortOrder = "desc"
 		}
 
-		parameters := &db.Parameters{
+		parameters := &Parameters{
 			CommandCount: commandCount,
 			ExitCode:     exitCode,
 			HostName:     hostName,
@@ -198,4 +200,82 @@ func ServerError(w http.ResponseWriter, r *http.Request, i interface{}) {
 
 func ServerErrorHandler() func(http.ResponseWriter, *http.Request, interface{}) {
 	return ServerError
+}
+
+func ServeVersion() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		data := []byte(fmt.Sprintf("commands v%s\n", Version))
+
+		w.Header().Write(bytes.NewBufferString("Content-Length: " + strconv.Itoa(len(data))))
+
+		w.Write(data)
+	}
+}
+
+func ServePage() error {
+	timezone, err := GetEnvVar("TZ", TimeZone, false)
+	if err != nil {
+		timezone = "UTC"
+	}
+
+	time.Local, err = time.LoadLocation(timezone)
+	if err != nil {
+		return err
+	}
+
+	bindHost, err := net.LookupHost(bind)
+	if err != nil {
+		return err
+	}
+
+	bindAddr := net.ParseIP(bindHost[0])
+	if bindAddr == nil {
+		return errors.New("invalid bind address provided")
+	}
+
+	dbType, err := GetEnvVar("COMMANDS_DB_TYPE", DatabaseType, false)
+	if err != nil {
+		return err
+	}
+	if dbType != "cockroachdb" && dbType != "postgresql" {
+		return errors.New("invalid database type specified")
+	}
+
+	databaseURL, err := GetDatabaseURL(dbType)
+	if err != nil {
+		return err
+	}
+
+	tableName, err := GetEnvVar("COMMANDS_DB_TABLE", DatabaseTable, false)
+	if err != nil {
+		return err
+	}
+
+	database := &Database{
+		Url:   databaseURL,
+		Table: tableName,
+	}
+
+	mux := httprouter.New()
+
+	mux.PanicHandler = ServerErrorHandler()
+
+	mux.GET("/", ServePageHandler(database))
+
+	mux.GET("/version", ServeVersion())
+
+	srv := &http.Server{
+		Addr:         net.JoinHostPort(bind, strconv.Itoa(int(port))),
+		Handler:      mux,
+		IdleTimeout:  10 * time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Minute,
+	}
+
+	err = srv.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	return nil
 }

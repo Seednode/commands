@@ -2,7 +2,7 @@
 Copyright © 2022 Seednode <seednode@seedno.de>
 */
 
-package db
+package cmd
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	utils "seedno.de/seednode/commands-web/utils"
 )
 
 type Database struct {
@@ -41,58 +40,58 @@ type Row struct {
 func GetDatabaseURL(dbType string) (string, error) {
 	var url strings.Builder
 
-	host, err := utils.GetEnvVar("COMMANDS_DB_HOST", false)
+	host, err := GetEnvVar("COMMANDS_DB_HOST", DatabaseHost, false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString("host=" + host)
 
-	port, err := utils.GetEnvVar("COMMANDS_DB_PORT", false)
+	port, err := GetEnvVar("COMMANDS_DB_PORT", DatabasePort, false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" port=" + port)
 
-	user, err := utils.GetEnvVar("COMMANDS_DB_USER", false)
+	user, err := GetEnvVar("COMMANDS_DB_USER", DatabaseUser, false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" user=" + user)
 
 	if dbType == "postgresql" {
-		pass, err := utils.GetEnvVar("COMMANDS_DB_PASS", true)
+		pass, err := GetEnvVar("COMMANDS_DB_PASS", DatabasePass, true)
 		if err != nil {
 			return "", err
 		}
 		url.WriteString(" password=" + pass)
 	}
 
-	database, err := utils.GetEnvVar("COMMANDS_DB_NAME", false)
+	database, err := GetEnvVar("COMMANDS_DB_NAME", DatabaseName, false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" dbname=" + database)
 
-	sslMode, err := utils.GetEnvVar("COMMANDS_DB_SSL_MODE", false)
+	sslMode, err := GetEnvVar("COMMANDS_DB_SSL_MODE", DatabaseSslMode, false)
 	if err != nil {
 		return "", err
 	}
 	url.WriteString(" sslmode=" + sslMode)
 
 	if dbType == "cockroachdb" {
-		sslRootCert, err := utils.GetEnvVar("COMMANDS_DB_ROOT_CERT", false)
+		sslRootCert, err := GetEnvVar("COMMANDS_DB_ROOT_CERT", DatabaseRootCert, false)
 		if err != nil {
 			return "", err
 		}
 		url.WriteString(" sslrootcert=" + sslRootCert)
 
-		sslClientKey, err := utils.GetEnvVar("COMMANDS_DB_SSL_KEY", false)
+		sslClientKey, err := GetEnvVar("COMMANDS_DB_SSL_KEY", DatabaseSslKey, false)
 		if err != nil {
 			return "", err
 		}
 		url.WriteString(" sslkey=" + sslClientKey)
 
-		sslClientCert, err := utils.GetEnvVar("COMMANDS_DB_SSL_CERT", false)
+		sslClientCert, err := GetEnvVar("COMMANDS_DB_SSL_CERT", DatabaseSslCert, false)
 		if err != nil {
 			return "", err
 		}

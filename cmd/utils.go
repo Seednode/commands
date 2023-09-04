@@ -10,10 +10,17 @@ import (
 	"os"
 )
 
-func GetEnvVar(variable string, redact bool) (string, error) {
-	v := os.Getenv(variable)
+func GetEnvVar(variable, flag string, redact bool) (string, error) {
+	var v string
+
+	if flag != "" {
+		v = flag
+	} else {
+		v = os.Getenv(variable)
+	}
+
 	if v == "" {
-		err := errors.New("variable " + variable + " is empty. exiting")
+		err := errors.New(variable + " is empty. exiting")
 		return "", err
 	}
 
