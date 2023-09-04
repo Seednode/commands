@@ -54,4 +54,3 @@ for platform in "${platforms[@]}"; do
   fi
   env GOOS="${GOOS}" GOARCH="${GOARCH}" CC="musl-gcc" CGO_ENABLED=0 go build -trimpath -ldflags "${ld_flags}" -o "builds/${output_name}"
 done
-d
