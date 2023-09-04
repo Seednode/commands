@@ -18,7 +18,7 @@ func GetEnvVar(variable string, redact bool) (string, error) {
 	}
 
 	if redact {
-		fmt.Printf("Set %v to <redacted>", variable)
+		fmt.Printf("Set %v to <redacted>\n", variable)
 	} else {
 		fmt.Printf("Set %v to %v\n", variable, v)
 	}
