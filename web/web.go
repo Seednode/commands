@@ -2,14 +2,11 @@
 Copyright © 2022 Seednode <seednode@seedno.de>
 */
 
-package cmd
+package web
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -18,13 +15,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	db "seedno.de/seednode/commands-web/db"
-	utils "seedno.de/seednode/commands-web/utils"
-)
-
-const (
-	LogDate            string        = `2006-01-02T15:04:05.000-07:00`
-	RedirectStatusCode int           = http.StatusSeeOther
-	Timeout            time.Duration = 10 * time.Second
 )
 
 var templateFuncs = template.FuncMap{"rangeStruct": RangeStructer}
@@ -145,7 +135,7 @@ func ConstructPage(w io.Writer, database *db.Database, parameters *db.Parameters
 	return nil
 }
 
-func servePageHandler(database *db.Database) httprouter.Handle {
+func ServePageHandler(database *db.Database) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var commandCount int
 		commandCount, err := strconv.Atoi(r.URL.Query().Get("count"))
@@ -199,101 +189,13 @@ func servePageHandler(database *db.Database) httprouter.Handle {
 	}
 }
 
-func serveVersion() httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := []byte(fmt.Sprintf("commands v%s\n", Version))
-
-		w.Header().Write(bytes.NewBufferString("Content-Length: " + strconv.Itoa(len(data))))
-
-		w.Write(data)
-	}
-}
-
-func serverError(w http.ResponseWriter, r *http.Request, i interface{}) {
-	startTime := time.Now()
-
-	if verbose {
-		fmt.Printf("%s | Invalid request for %s from %s\n",
-			startTime.Format(LogDate),
-			r.URL.Path,
-			r.RemoteAddr,
-		)
-	}
-
+func ServerError(w http.ResponseWriter, r *http.Request, i interface{}) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Header().Add("Content-Type", "text/plain")
 
 	w.Write([]byte("500 Internal Server Error\n"))
 }
 
-func serverErrorHandler() func(http.ResponseWriter, *http.Request, interface{}) {
-	return serverError
-}
-
-func ServePage() error {
-	timezone, err := utils.GetEnvVar("TZ", false)
-	if err != nil {
-		timezone = "UTC"
-	}
-
-	time.Local, err = time.LoadLocation(timezone)
-	if err != nil {
-		return err
-	}
-
-	bindHost, err := net.LookupHost(bind)
-	if err != nil {
-		return err
-	}
-
-	bindAddr := net.ParseIP(bindHost[0])
-	if bindAddr == nil {
-		return errors.New("invalid bind address provided")
-	}
-
-	dbType, err := utils.GetEnvVar("COMMANDS_DB_TYPE", false)
-	if err != nil {
-		return err
-	}
-	if dbType != "cockroachdb" && dbType != "postgresql" {
-		return errors.New("invalid database type specified")
-	}
-
-	databaseURL, err := db.GetDatabaseURL(dbType)
-	if err != nil {
-		return err
-	}
-
-	tableName, err := utils.GetEnvVar("COMMANDS_DB_TABLE", false)
-	if err != nil {
-		return err
-	}
-
-	database := &db.Database{
-		Url:   databaseURL,
-		Table: tableName,
-	}
-
-	mux := httprouter.New()
-
-	mux.PanicHandler = serverErrorHandler()
-
-	mux.GET("/", servePageHandler(database))
-
-	mux.GET("/version", serveVersion())
-
-	srv := &http.Server{
-		Addr:         net.JoinHostPort(bind, strconv.Itoa(int(port))),
-		Handler:      mux,
-		IdleTimeout:  10 * time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Minute,
-	}
-
-	err = srv.ListenAndServe()
-	if !errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-
-	return nil
+func ServerErrorHandler() func(http.ResponseWriter, *http.Request, interface{}) {
+	return ServerError
 }

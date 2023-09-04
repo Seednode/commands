@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 Seednode <seednode@seedno.de>
+Copyright © 2023 Seednode <seednode@seedno.de>
 */
 
 package main
@@ -7,11 +7,11 @@ package main
 import (
 	"log"
 
-	web "seedno.de/seednode/commands-web/web"
+	cmd "seedno.de/seednode/commands-web/cmd"
 )
 
 func main() {
-	err := web.ServePage()
+	err := cmd.Execute()
 	if err != nil {
 		log.Fatal(err)
 	}
