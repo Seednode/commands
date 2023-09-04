@@ -5,17 +5,17 @@ Copyright © 2022 Seednode <seednode@seedno.de>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"text/template"
 	"time"
 
-	"seedno.de/seednode/commands-web/cockroach"
+	"seedno.de/seednode/commands-web/db"
 	utils "seedno.de/seednode/commands-web/utils"
 )
 
@@ -100,7 +100,7 @@ func GenerateFooter() string {
 func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exitCode int, hostName, commandName, sortBy, sortOrder string) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := cockroach.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+	results, totalCommandCount, failedCommandCount, err := db.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return err
 	}
@@ -184,17 +184,24 @@ func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 
 func doNothing(http.ResponseWriter, *http.Request) {}
 
-func ServePage() {
+func ServePage() error {
 	err := utils.LoadEnv()
 	if err != nil {
-		fmt.Println("Environment file not found.")
-		os.Exit(1)
+		return err
 	}
 
-	databaseURL, err := cockroach.GetDatabaseURL()
+	dbType, err := utils.GetEnvVar("COMMANDS_DB_TYPE")
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
+	}
+
+	if dbType != "cockroachdb" && dbType != "postgresql" {
+		return errors.New("invalid database type specified")
+	}
+
+	databaseURL, err := db.GetDatabaseURL(dbType)
+	if err != nil {
+		return err
 	}
 
 	timezone, err := utils.GetEnvVar("COMMANDS_TZ")
@@ -211,4 +218,6 @@ func ServePage() {
 	http.HandleFunc("/favicon.ico", doNothing)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+
+	return nil
 }

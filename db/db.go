@@ -2,12 +2,13 @@
 Copyright © 2022 Seednode <seednode@seedno.de>
 */
 
-package cockroach
+package db
 
 import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -23,69 +24,70 @@ type Row struct {
 	ExitCode    int
 }
 
-func GetDatabaseURL() (string, error) {
+func GetDatabaseURL(dbType string) (string, error) {
+	var url strings.Builder
+
 	host, err := utils.GetEnvVar("COMMANDS_DB_HOST")
 	if err != nil {
 		return "", err
 	}
-	host = "host=" + host
+	url.WriteString("host=" + host)
 
 	port, err := utils.GetEnvVar("COMMANDS_DB_PORT")
 	if err != nil {
 		return "", err
 	}
-	port = " port=" + port
+	url.WriteString(" port=" + port)
 
 	user, err := utils.GetEnvVar("COMMANDS_DB_USER")
 	if err != nil {
 		return "", err
 	}
-	user = " user=" + user
+	url.WriteString(" user=" + user)
+
+	if dbType == "postgresql" {
+		pass, err := utils.GetEnvVar("COMMANDS_DB_PASS")
+		if err != nil {
+			return "", err
+		}
+		url.WriteString(" password=" + pass)
+	}
 
 	database, err := utils.GetEnvVar("COMMANDS_DB_NAME")
 	if err != nil {
 		return "", err
 	}
-	database = " dbname=" + database
+	url.WriteString(" dbname=" + database)
 
 	sslMode, err := utils.GetEnvVar("COMMANDS_DB_SSL_MODE")
 	if err != nil {
 		return "", err
 	}
-	sslMode = " sslmode=" + sslMode
+	url.WriteString(" sslmode=" + sslMode)
 
-	sslRootCert, err := utils.GetEnvVar("COMMANDS_DB_ROOT_CERT")
-	if err != nil {
-		return "", err
+	if dbType == "cockroachdb" {
+		sslRootCert, err := utils.GetEnvVar("COMMANDS_DB_ROOT_CERT")
+		if err != nil {
+			return "", err
+		}
+		url.WriteString(" sslrootcert=" + sslRootCert)
+
+		sslClientKey, err := utils.GetEnvVar("COMMANDS_DB_SSL_KEY")
+		if err != nil {
+			return "", err
+		}
+		url.WriteString(" sslkey=" + sslClientKey)
+
+		sslClientCert, err := utils.GetEnvVar("COMMANDS_DB_SSL_CERT")
+		if err != nil {
+			return "", err
+		}
+		url.WriteString(" sslcert=" + sslClientCert)
 	}
-	sslRootCert = " sslrootcert=" + sslRootCert
 
-	sslClientKey, err := utils.GetEnvVar("COMMANDS_DB_SSL_KEY")
-	if err != nil {
-		return "", err
-	}
-	sslClientKey = " sslkey=" + sslClientKey
+	fmt.Printf("Set database URL to %v\n", url.String())
 
-	sslClientCert, err := utils.GetEnvVar("COMMANDS_DB_SSL_CERT")
-	if err != nil {
-		return "", err
-	}
-	sslClientCert = " sslcert=" + sslClientCert
-
-	connection := fmt.Sprint(
-		host,
-		port,
-		user,
-		database,
-		sslMode,
-		sslRootCert,
-		sslClientKey,
-		sslClientCert,
-	)
-
-	fmt.Printf("Set database URL to %v\n", connection)
-
-	return connection, nil
+	return url.String(), nil
 }
 
 func openDatabase(databaseURL string) (*pgx.Conn, error) {
