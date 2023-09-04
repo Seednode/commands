@@ -3,6 +3,7 @@ In this example, I'll be using the wonderful [usql](https://github.com/xubingnan
 
 # Connect to the database:
 To connect, run the following, adjusting variables as needed:
+
 `usql postgres://${COMMANDS_DB_USER}@${COMMANDS_DB_HOST}:${COMMANDS_DB_PORT}/${COMMANDS_DB_NAME}`
 
 # Create logging table
