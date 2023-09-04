@@ -97,10 +97,10 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exitCode int, hostName, commandName, sortBy, sortOrder string) error {
+func ConstructPage(w io.Writer, databaseURL, tableName, timezone string, commandCount, exitCode int, hostName, commandName, sortBy, sortOrder string) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := db.RunQuery(databaseURL, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+	results, totalCommandCount, failedCommandCount, err := db.RunQuery(databaseURL, tableName, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func ConstructPage(w io.Writer, databaseURL, timezone string, commandCount, exit
 	return nil
 }
 
-func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
+func servePageHandler(databaseURL, tableName, timezone string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var commandCount int
 		commandCount, err := strconv.Atoi(r.URL.Query().Get("count"))
@@ -175,7 +175,7 @@ func servePageHandler(databaseURL, timezone string) http.HandlerFunc {
 		}
 
 		w.Header().Add("Content-Type", "text/html")
-		err = ConstructPage(w, databaseURL, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+		err = ConstructPage(w, databaseURL, tableName, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -199,6 +199,11 @@ func ServePage() error {
 		return err
 	}
 
+	tableName, err := utils.GetEnvVar("COMMANDS_DB_TABLE", false)
+	if err != nil {
+		return err
+	}
+
 	timezone, err := utils.GetEnvVar("COMMANDS_TZ", false)
 	if err != nil {
 		timezone = "UTC"
@@ -209,7 +214,7 @@ func ServePage() error {
 		port = "8080"
 	}
 
-	http.HandleFunc("/", servePageHandler(databaseURL, timezone))
+	http.HandleFunc("/", servePageHandler(databaseURL, tableName, timezone))
 	http.HandleFunc("/favicon.ico", doNothing)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))

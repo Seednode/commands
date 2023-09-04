@@ -117,8 +117,8 @@ func setTimeZone(oldTime time.Time, timezone string) (time.Time, error) {
 	return newTime, nil
 }
 
-func getTotalCommandCount(connection *pgx.Conn) (int, error) {
-	statement := "SELECT COUNT(commandname) FROM logging"
+func getTotalCommandCount(connection *pgx.Conn, tableName string) (int, error) {
+	statement := fmt.Sprintf("SELECT COUNT(commandname) FROM %s", tableName)
 
 	var totalCommandCount int
 	err := connection.QueryRow(context.Background(), statement).Scan(&totalCommandCount)
@@ -129,8 +129,8 @@ func getTotalCommandCount(connection *pgx.Conn) (int, error) {
 	return totalCommandCount, nil
 }
 
-func getFailedCommandCount(connection *pgx.Conn) (int, error) {
-	statement := "SELECT COUNT(exitcode) FROM logging WHERE exitcode <> 0"
+func getFailedCommandCount(connection *pgx.Conn, tableName string) (int, error) {
+	statement := fmt.Sprintf("SELECT COUNT(exitcode) FROM %s WHERE exitcode <> 0", tableName)
 
 	var failedCommandCount int
 	err := connection.QueryRow(context.Background(), statement).Scan(&failedCommandCount)
@@ -141,12 +141,12 @@ func getFailedCommandCount(connection *pgx.Conn) (int, error) {
 	return failedCommandCount, nil
 }
 
-func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, error) {
+func getRecentCommands(connection *pgx.Conn, tableName string, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, error) {
 	var rowSlice []Row
 
 	var whereClauses = 0
 
-	statement := fmt.Sprintf("%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v",
+	statement := fmt.Sprintf("%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v %v",
 		"select",
 		"row_number() over() as row,",
 		"date_trunc('second', starttime) as start_time,",
@@ -154,7 +154,7 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 		"hostname as host_name,",
 		"commandname as command_name,",
 		"exitcode as exit_code",
-		"from logging")
+		"from", tableName)
 
 	if exitCode != -1 {
 		statement += fmt.Sprintf("\nwhere exitcode = '%v'", exitCode)
@@ -204,8 +204,7 @@ func getRecentCommands(connection *pgx.Conn, commandCount int, exitCode int, hos
 	return rowSlice, nil
 }
 
-func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, int, int, error) {
-
+func RunQuery(databaseURL, tableName, timezone string, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, int, int, error) {
 	connection, err := openDatabase(databaseURL)
 	if err != nil {
 		return []Row{}, 0, 0, err
@@ -217,17 +216,17 @@ func RunQuery(databaseURL, timezone string, commandCount int, exitCode int, host
 		}
 	}(connection)
 
-	totalCommandCount, err := getTotalCommandCount(connection)
+	totalCommandCount, err := getTotalCommandCount(connection, tableName)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
 
-	failedCommandCount, err := getFailedCommandCount(connection)
+	failedCommandCount, err := getFailedCommandCount(connection, tableName)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommands(connection, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+	commands, err := getRecentCommands(connection, tableName, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
