@@ -31,7 +31,7 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:   "commands",
-		Short: "Display command log from a database.",
+		Short: "Display command logs from a database.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := ServePage()

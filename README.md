@@ -37,3 +37,30 @@ COMMANDS_DB_SSL_MODE=disable
 COMMANDS_PORT=8080
 TZ=America/Chicago
 ```
+
+## Usage output
+Alternatively, you can configure the service using command-line flags.
+```
+Display command logs from a database.
+
+Usage:
+  commands [flags]
+
+Flags:
+  -b, --bind string                 address to bind to (default "0.0.0.0")
+      --database-host string        database host to connect to
+      --database-name string        database name to connect to
+      --database-pass string        database password to connect with
+      --database-port string        database port to connect to
+      --database-root-cert string   database ssl root certificate path
+      --database-ssl-cert string    database ssl connection certificate path
+      --database-ssl-key string     database ssl connection key path
+      --database-ssl-mode string    database ssl connection mode
+      --database-table string       database table to query
+      --database-type string        database type to connect to
+      --database-user string        database user to connect as
+  -h, --help                        help for commands
+  -p, --port uint16                 port to listen on (default 8080)
+      --time-zone string            timezone to use
+  -V, --version                     display version and exit
+```
