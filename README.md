@@ -35,4 +35,5 @@ COMMANDS_DB_NAME=logging
 COMMANDS_DB_TABLE=logging
 COMMANDS_DB_SSL_MODE=disable
 COMMANDS_PORT=8080
+TZ=America/Chicago
 ```

@@ -4,14 +4,43 @@ package_name="commands"
 mkdir -p builds
 
 platforms=(
+  "aix/ppc64"
+  "android/arm64"
   "darwin/amd64"
   "darwin/arm64"
+  "dragonfly/amd64"
+  "freebsd/386"
+  "freebsd/amd64"
+  "freebsd/arm"
+  "freebsd/arm64"
+  "freebsd/riscv64"
+  "illumos/amd64"
+  "js/wasm"
   "linux/386"
   "linux/amd64"
   "linux/arm"
   "linux/arm64"
+  "linux/mips"
+  "linux/mips64"
+  "linux/mips64le"
+  "linux/mipsle"
+  "linux/ppc64"
+  "linux/ppc64le"
+  "linux/riscv64"
+  "linux/s390x"
+  "netbsd/386"
+  "netbsd/amd64"
+  "netbsd/arm"
+  "netbsd/arm64"
+  "openbsd/386"
+  "openbsd/amd64"
+  "openbsd/arm"
+  "openbsd/arm64"
+  "openbsd/mips64"
   "windows/386"
   "windows/amd64"
+  "windows/arm"
+  "windows/arm64"
 )
 
 for platform in "${platforms[@]}"; do
@@ -22,8 +51,7 @@ for platform in "${platforms[@]}"; do
   ld_flags='-s -w'
   if [ "${GOOS}" == "windows" ]; then
     output_name+=".exe"
-  elif [ "${GOOS}" == "linux" ] && [ "${GOARCH}" == "amd64" ]; then
-    ld_flags+=' -linkmode external -extldflags "-static"'
   fi
-  env GOOS="${GOOS}" GOARCH="${GOARCH}" CC="musl-gcc" go build -trimpath -ldflags "${ld_flags}" -o "builds/${output_name}"
+  env GOOS="${GOOS}" GOARCH="${GOARCH}" CC="musl-gcc" CGO_ENABLED=0 go build -trimpath -ldflags "${ld_flags}" -o "builds/${output_name}"
 done
+d

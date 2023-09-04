@@ -11,9 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	utils "seedno.de/seednode/commands-web/utils"
 )
+
+type Database struct {
+	Url   string
+	Table string
+}
 
 type Row struct {
 	RowNumber   int
@@ -106,17 +111,6 @@ func closeDatabase(connection *pgx.Conn) error {
 	return nil
 }
 
-func setTimeZone(oldTime time.Time, timezone string) (time.Time, error) {
-	location, err := time.LoadLocation(timezone)
-	if err != nil {
-		return oldTime, err
-	}
-
-	newTime := oldTime.In(location)
-
-	return newTime, nil
-}
-
 func getTotalCommandCount(connection *pgx.Conn, tableName string) (int, error) {
 	statement := fmt.Sprintf("SELECT COUNT(commandname) FROM %s", tableName)
 
@@ -204,8 +198,8 @@ func getRecentCommands(connection *pgx.Conn, tableName string, commandCount int,
 	return rowSlice, nil
 }
 
-func RunQuery(databaseURL, tableName, timezone string, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, int, int, error) {
-	connection, err := openDatabase(databaseURL)
+func RunQuery(database *Database, commandCount int, exitCode int, hostName, commandName, sortBy, sortOrder string) ([]Row, int, int, error) {
+	connection, err := openDatabase(database.Url)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
@@ -216,23 +210,23 @@ func RunQuery(databaseURL, tableName, timezone string, commandCount int, exitCod
 		}
 	}(connection)
 
-	totalCommandCount, err := getTotalCommandCount(connection, tableName)
+	totalCommandCount, err := getTotalCommandCount(connection, database.Table)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
 
-	failedCommandCount, err := getFailedCommandCount(connection, tableName)
+	failedCommandCount, err := getFailedCommandCount(connection, database.Table)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
 
-	commands, err := getRecentCommands(connection, tableName, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+	commands, err := getRecentCommands(connection, database.Table, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return []Row{}, 0, 0, err
 	}
 
 	for i := range commands {
-		commands[i].StartTime, err = setTimeZone(commands[i].StartTime, timezone)
+		commands[i].StartTime = time.Now()
 		if err != nil {
 			return []Row{}, 0, 0, err
 		}

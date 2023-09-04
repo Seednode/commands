@@ -15,7 +15,7 @@ import (
 	"text/template"
 	"time"
 
-	"seedno.de/seednode/commands-web/db"
+	db "seedno.de/seednode/commands-web/db"
 	utils "seedno.de/seednode/commands-web/utils"
 )
 
@@ -97,10 +97,10 @@ func GenerateFooter() string {
 	return htmlFooter
 }
 
-func ConstructPage(w io.Writer, databaseURL, tableName, timezone string, commandCount, exitCode int, hostName, commandName, sortBy, sortOrder string) error {
+func ConstructPage(w io.Writer, database *db.Database, commandCount, exitCode int, hostName, commandName, sortBy, sortOrder string) error {
 	startTime := time.Now()
 
-	results, totalCommandCount, failedCommandCount, err := db.RunQuery(databaseURL, tableName, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+	results, totalCommandCount, failedCommandCount, err := db.RunQuery(database, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func ConstructPage(w io.Writer, databaseURL, tableName, timezone string, command
 	return nil
 }
 
-func servePageHandler(databaseURL, tableName, timezone string) http.HandlerFunc {
+func servePageHandler(database *db.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var commandCount int
 		commandCount, err := strconv.Atoi(r.URL.Query().Get("count"))
@@ -175,7 +175,7 @@ func servePageHandler(databaseURL, tableName, timezone string) http.HandlerFunc 
 		}
 
 		w.Header().Add("Content-Type", "text/html")
-		err = ConstructPage(w, databaseURL, tableName, timezone, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
+		err = ConstructPage(w, database, commandCount, exitCode, hostName, commandName, sortBy, sortOrder)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -185,11 +185,20 @@ func servePageHandler(databaseURL, tableName, timezone string) http.HandlerFunc 
 func doNothing(http.ResponseWriter, *http.Request) {}
 
 func ServePage() error {
-	dbType, err := utils.GetEnvVar("COMMANDS_DB_TYPE", false)
+	timezone, err := utils.GetEnvVar("TZ", false)
+	if err != nil {
+		timezone = "UTC"
+	}
+
+	time.Local, err = time.LoadLocation(timezone)
 	if err != nil {
 		return err
 	}
 
+	dbType, err := utils.GetEnvVar("COMMANDS_DB_TYPE", false)
+	if err != nil {
+		return err
+	}
 	if dbType != "cockroachdb" && dbType != "postgresql" {
 		return errors.New("invalid database type specified")
 	}
@@ -204,9 +213,9 @@ func ServePage() error {
 		return err
 	}
 
-	timezone, err := utils.GetEnvVar("COMMANDS_TZ", false)
-	if err != nil {
-		timezone = "UTC"
+	database := &db.Database{
+		Url:   databaseURL,
+		Table: tableName,
 	}
 
 	port, err := utils.GetEnvVar("COMMANDS_PORT", false)
@@ -214,7 +223,7 @@ func ServePage() error {
 		port = "8080"
 	}
 
-	http.HandleFunc("/", servePageHandler(databaseURL, tableName, timezone))
+	http.HandleFunc("/", servePageHandler(database))
 	http.HandleFunc("/favicon.ico", doNothing)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
