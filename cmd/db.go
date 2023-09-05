@@ -235,12 +235,5 @@ func RunQuery(database *Database, parameters *Parameters) ([]Row, int, int, erro
 		return []Row{}, 0, 0, err
 	}
 
-	for i := range commands {
-		commands[i].StartTime = time.Now()
-		if err != nil {
-			return []Row{}, 0, 0, err
-		}
-	}
-
 	return commands, totalCommandCount, failedCommandCount, nil
 }
