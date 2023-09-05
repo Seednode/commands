@@ -148,7 +148,9 @@ func getRecentCommands(connection *pgx.Conn, tableName string, parameters *Param
 
 	var whereClauses = 0
 
-	statement := fmt.Sprintf("%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v %v",
+	var statement strings.Builder
+
+	statement.WriteString(fmt.Sprintf("%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v %v",
 		"select",
 		"row_number() over() as row,",
 		"date_trunc('second', starttime) as start_time,",
@@ -156,39 +158,39 @@ func getRecentCommands(connection *pgx.Conn, tableName string, parameters *Param
 		"hostname as host_name,",
 		"commandname as command_name,",
 		"exitcode as exit_code",
-		"from", tableName)
+		"from", tableName))
 
 	if parameters.ExitCode != -1 {
-		statement += fmt.Sprintf("\nwhere exitcode = '%v'", parameters.ExitCode)
+		statement.WriteString(fmt.Sprintf("\nwhere exitcode = '%v'", parameters.ExitCode))
 		whereClauses += 1
 	}
 
 	if parameters.HostName != "" {
 		if whereClauses == 0 {
-			statement += "\nwhere "
+			statement.WriteString("\nwhere ")
 		} else {
-			statement += "\nand "
+			statement.WriteString("\nand ")
 		}
-		statement += fmt.Sprintf("hostname = '%v'", parameters.HostName)
+		statement.WriteString(fmt.Sprintf("hostname = '%v'", parameters.HostName))
 		whereClauses += 1
 	}
 
 	if parameters.CommandName != "" {
 		if whereClauses == 0 {
-			statement += "\nwhere "
+			statement.WriteString("\nwhere ")
 		} else {
-			statement += "\nand "
+			statement.WriteString("\nand ")
 		}
-		statement += fmt.Sprintf("commandname like '%%%v%%'", parameters.CommandName)
+		statement.WriteString(fmt.Sprintf("commandname like '%%%v%%'", parameters.CommandName))
 		whereClauses += 1
 	}
 
-	statement += fmt.Sprintf("\norder by %v %v\n", parameters.SortBy, parameters.SortOrder)
-	statement += fmt.Sprintf("limit %v;", strconv.Itoa(parameters.CommandCount))
+	statement.WriteString(fmt.Sprintf("\norder by %v %v\n", parameters.SortBy, parameters.SortOrder))
+	statement.WriteString(fmt.Sprintf("limit %v;", strconv.Itoa(parameters.CommandCount)))
 
-	fmt.Printf("\n%v\n\n", statement)
+	fmt.Printf("\n%s\n\n", statement.String())
 
-	rows, err := connection.Query(context.Background(), statement)
+	rows, err := connection.Query(context.Background(), statement.String())
 	if err != nil {
 		return rowSlice, err
 	}
