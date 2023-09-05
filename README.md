@@ -6,6 +6,8 @@ Feature requests, code criticism, bug reports, general chit-chat, and unrelated 
 
 Static binary builds available [here](https://cdn.seedno.de/builds/commands).
 
+x86_64 and ARM Docker images of latest version: `oci.seedno.de/seednode/commands:latest`.
+
 Dockerfile available [here](https://git.seedno.de/seednode/commands/docker/Dockerfile).
 
 Docker compose file example using Traefik available [here](https://cdn.seedno.de/builds/commands/docker/docker-compose.yml).
