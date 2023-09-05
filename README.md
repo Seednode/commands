@@ -1,13 +1,14 @@
 
 ## About
-
 A basic frontend to view command history, with optional filtering via query parameters.
 
 Feature requests, code criticism, bug reports, general chit-chat, and unrelated angst accepted at `commands@seedno.de`.
 
 Static binary builds available [here](https://cdn.seedno.de/builds/commands).
 
-Dockerfile available [here](https://git.seedno.de/seednode/docker-commands).
+Dockerfile available [here](https://git.seedno.de/seednode/commands/docker/Dockerfile).
+
+Docker compose file example using Traefik available [here](https://cdn.seedno.de/builds/commands/docker/docker-compose.yml).
 
 <TODO: Add screenshot>
 
@@ -79,3 +80,8 @@ Flags:
       --time-zone string            timezone to use
   -V, --version                     display version and exit
 ```
+
+## Building the Docker container
+From inside the `docker/` subdirectory, build the image using the following command:
+
+`REGISTRY=<registry url> LATEST=yes TAG=alpine ./build.sh`
