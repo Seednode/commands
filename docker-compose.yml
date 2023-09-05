@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    environment:
+      - "CF_DNS_API_TOKEN=${CLOUDFLARE_API_TOKEN:?not set}"
+      - "TZ=${TIMEZONE:?not set}"
+    command:
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/certs/acme.json"
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.http.http.redirections.entrypoint.to=https"
+      - "--entrypoints.http.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.https.address=:443"
+      - "--entrypoints.https.http3"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=traefik"
+    labels:
+      - "traefik.enable=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    networks:
+      - traefik
+    volumes:
+      - type: bind
+        source: /home/sinc/traefik/certs
+        target: /certs
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+
+  commands:
+    image: oci.seedno.de/seednode/commands:latest
+    container_name: commands
+    restart: unless-stopped
+    depends_on:
+      - commands-db
+    environment:
+      - "COMMANDS_DB_TYPE=${COMMANDS_DB_TYPE:?not set}"
+      - "COMMANDS_DB_HOST=${COMMANDS_DB_HOST:?not set}"
+      - "COMMANDS_DB_PORT=${COMMANDS_DB_PORT:?not set}"
+      - "COMMANDS_DB_USER=${COMMANDS_DB_USER:?not set}"
+      - "COMMANDS_DB_PASS=${COMMANDS_DB_PASS:?not set}"
+      - "COMMANDS_DB_NAME=${COMMANDS_DB_NAME:?not set}"
+      - "COMMANDS_DB_TABLE=${COMMANDS_DB_TABLE:?not set}"
+      - "COMMANDS_DB_SSL_MODE=${COMMANDS_DB_SSL_MODE:?not set}"
+      - "TZ=${TIMEZONE:?not set}"
+    command:
+      - "--bind=0.0.0.0"
+      - "--port=8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.commands.rule=Host(`commands.fake.example`)"
+      - "traefik.http.routers.commands.entrypoints=https"
+      - "traefik.http.routers.commands.service=commands"
+      - "traefik.http.routers.commands.tls=true"
+      - "traefik.http.routers.commands.tls.certresolver=letsencrypt"
+      - "traefik.http.services.commands.loadbalancer.server.port=8080"
+    networks:
+      - traefik
+      - commands
+
+  commands-db:
+    image: postgres:15-alpine
+    container_name: commands-db
+    restart: unless-stopped
+    environment:
+      - "POSTGRES_DB=${COMMANDS_DB_NAME:?not set}"
+      - "POSTGRES_USER=${COMMANDS_DB_USER:?not set}"
+      - "POSTGRES_PASSWORD=${COMMANDS_DB_PASS:?not set}"
+    networks:
+      - commands
+    volumes:
+      - type: bind
+        source: /docker/commands/database
+        target: /var/lib/postgresql/data
+
+networks:
+  traefik:
+    name: traefik
+  commands:
+    name: commands
+    internal: true
