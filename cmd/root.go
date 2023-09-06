@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	Version string = "0.3.3"
+	Version string = "0.3.4"
 )
 
 var (
@@ -27,6 +27,7 @@ var (
 	TimeZone         string
 	bind             string
 	port             uint16
+	profile          bool
 	version          bool
 
 	rootCmd = &cobra.Command{
@@ -68,6 +69,7 @@ func init() {
 	rootCmd.Flags().StringVar(&TimeZone, "time-zone", "", "timezone to use")
 	rootCmd.Flags().StringVarP(&bind, "bind", "b", "0.0.0.0", "address to bind to")
 	rootCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "port to listen on")
+	rootCmd.Flags().BoolVar(&profile, "profile", false, "register net/http/pprof handlers")
 	rootCmd.Flags().BoolVarP(&version, "version", "V", false, "display version and exit")
 	rootCmd.Flags().SetInterspersed(true)
 
