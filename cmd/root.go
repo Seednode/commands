@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	Version string = "0.3.4"
+	ReleaseVersion string = "0.3.4"
 )
 
 var (
@@ -81,5 +81,5 @@ func init() {
 	})
 
 	rootCmd.SetVersionTemplate("commands v{{.Version}}\n")
-	rootCmd.Version = Version
+	rootCmd.Version = ReleaseVersion
 }
