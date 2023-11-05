@@ -206,7 +206,7 @@ func ServerErrorHandler() func(http.ResponseWriter, *http.Request, interface{}) 
 
 func ServeVersion() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := []byte(fmt.Sprintf("commands v%s\n", Version))
+		data := []byte(fmt.Sprintf("commands v%s\n", ReleaseVersion))
 
 		w.Header().Write(bytes.NewBufferString("Content-Length: " + strconv.Itoa(len(data))))
 
