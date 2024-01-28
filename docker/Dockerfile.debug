@@ -12,7 +12,7 @@ RUN apk add --update-cache git upx
 # clone
 RUN git clone https://git.seedno.de/seednode/$app /src/$app
 
-# build
+# build and compress the binary
 WORKDIR /src/$app
 ARG TARGETOS TARGETARCH
 RUN CGO_ENABLED=0 \
@@ -23,14 +23,14 @@ RUN CGO_ENABLED=0 \
     && chmod 500 $app
 
 # set up final stage
-FROM scratch
+FROM --platform=$BUILDPLATFORM alpine:latest
 ARG app
 
 # copy in user info
 COPY --chown=root:root --chmod=0400 passwd /etc/passwd
 
-# run as nonroot
-USER nonroot
+# run as root for debug
+USER root
 
 # copy in binary
 COPY --from=build --chown=root:root --chmod=0005 /src/$app/$app /$app
@@ -39,4 +39,4 @@ COPY --from=build --chown=root:root --chmod=0005 /src/$app/$app /$app
 EXPOSE 8080
 
 # run application
-ENTRYPOINT ["/commands"]
+ENTRYPOINT ["/bin/ash"]
