@@ -3,7 +3,7 @@ module seedno.de/seednode/commands-web
 go 1.21
 
 require (
-	github.com/jackc/pgx/v5 v5.5.2
+	github.com/jackc/pgx/v5 v5.5.3
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/spf13/cobra v1.8.0
 )
