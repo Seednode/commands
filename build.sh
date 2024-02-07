@@ -31,7 +31,6 @@ platforms=(
   "netbsd/amd64"
   "netbsd/arm"
   "netbsd/arm64"
-  "openbsd/mips64"
   "wasip1/wasm"
   "windows/386"
   "windows/amd64"
