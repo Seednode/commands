@@ -1,6 +1,6 @@
 module seedno.de/seednode/commands-web
 
-go 1.22
+go 1.23
 
 require (
 	github.com/jackc/pgx/v5 v5.6.0
