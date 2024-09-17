@@ -37,65 +37,24 @@ type Row struct {
 	ExitCode    int
 }
 
-func GetDatabaseURL(dbType string) (string, error) {
+func GetDatabaseURL() (string, error) {
 	var url strings.Builder
 
-	host, err := GetEnvVar("COMMANDS_DB_HOST", DatabaseHost, false)
-	if err != nil {
-		return "", err
-	}
-	url.WriteString("host=" + host)
+	url.WriteString("host=" + DatabaseHost)
+	url.WriteString(" port=" + DatabasePort)
+	url.WriteString(" user=" + DatabaseUser)
 
-	port, err := GetEnvVar("COMMANDS_DB_PORT", DatabasePort, false)
-	if err != nil {
-		return "", err
-	}
-	url.WriteString(" port=" + port)
-
-	user, err := GetEnvVar("COMMANDS_DB_USER", DatabaseUser, false)
-	if err != nil {
-		return "", err
-	}
-	url.WriteString(" user=" + user)
-
-	if dbType == "postgresql" {
-		pass, err := GetEnvVar("COMMANDS_DB_PASS", DatabasePass, true)
-		if err != nil {
-			return "", err
-		}
-		url.WriteString(" password=" + pass)
+	if DatabaseType == "postgresql" {
+		url.WriteString(" password=" + DatabasePass)
 	}
 
-	database, err := GetEnvVar("COMMANDS_DB_NAME", DatabaseName, false)
-	if err != nil {
-		return "", err
-	}
-	url.WriteString(" dbname=" + database)
+	url.WriteString(" dbname=" + DatabaseName)
+	url.WriteString(" sslmode=" + DatabaseSslMode)
 
-	sslMode, err := GetEnvVar("COMMANDS_DB_SSL_MODE", DatabaseSslMode, false)
-	if err != nil {
-		return "", err
-	}
-	url.WriteString(" sslmode=" + sslMode)
-
-	if dbType == "cockroachdb" {
-		sslRootCert, err := GetEnvVar("COMMANDS_DB_ROOT_CERT", DatabaseRootCert, false)
-		if err != nil {
-			return "", err
-		}
-		url.WriteString(" sslrootcert=" + sslRootCert)
-
-		sslClientKey, err := GetEnvVar("COMMANDS_DB_SSL_KEY", DatabaseSslKey, false)
-		if err != nil {
-			return "", err
-		}
-		url.WriteString(" sslkey=" + sslClientKey)
-
-		sslClientCert, err := GetEnvVar("COMMANDS_DB_SSL_CERT", DatabaseSslCert, false)
-		if err != nil {
-			return "", err
-		}
-		url.WriteString(" sslcert=" + sslClientCert)
+	if DatabaseType == "cockroachdb" {
+		url.WriteString(" sslrootcert=" + DatabaseRootCert)
+		url.WriteString(" sslkey=" + DatabaseSslKey)
+		url.WriteString(" sslcert=" + DatabaseSslCert)
 	}
 
 	return url.String(), nil

@@ -5,11 +5,16 @@ Copyright © 2024 Seednode <seednode@seedno.de>
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 const (
-	ReleaseVersion string = "0.4.2"
+	ReleaseVersion string = "0.5.0"
 )
 
 var (
@@ -29,11 +34,16 @@ var (
 	port             uint16
 	profile          bool
 	version          bool
+)
 
-	rootCmd = &cobra.Command{
+func NewRootCommand() *cobra.Command {
+	rootCmd := &cobra.Command{
 		Use:   "commands",
 		Short: "Display command logs from a database.",
 		Args:  cobra.ExactArgs(0),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return initializeConfig(cmd)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := ServePage()
 			if err != nil {
@@ -43,30 +53,19 @@ var (
 			return nil
 		},
 	}
-)
 
-func Execute() error {
-	err := rootCmd.Execute()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func init() {
-	rootCmd.Flags().StringVar(&DatabaseType, "database-type", "", "database type to connect to")
-	rootCmd.Flags().StringVar(&DatabaseHost, "database-host", "", "database host to connect to")
-	rootCmd.Flags().StringVar(&DatabasePort, "database-port", "", "database port to connect to")
-	rootCmd.Flags().StringVar(&DatabaseUser, "database-user", "", "database user to connect as")
-	rootCmd.Flags().StringVar(&DatabasePass, "database-pass", "", "database password to connect with")
-	rootCmd.Flags().StringVar(&DatabaseName, "database-name", "", "database name to connect to")
-	rootCmd.Flags().StringVar(&DatabaseTable, "database-table", "", "database table to query")
-	rootCmd.Flags().StringVar(&DatabaseSslMode, "database-ssl-mode", "", "database ssl connection mode")
-	rootCmd.Flags().StringVar(&DatabaseRootCert, "database-root-cert", "", "database ssl root certificate path")
-	rootCmd.Flags().StringVar(&DatabaseSslCert, "database-ssl-cert", "", "database ssl connection certificate path")
-	rootCmd.Flags().StringVar(&DatabaseSslKey, "database-ssl-key", "", "database ssl connection key path")
-	rootCmd.Flags().StringVar(&TimeZone, "time-zone", "", "timezone to use")
+	rootCmd.Flags().StringVar(&DatabaseType, "db-type", "", "database type to connect to")
+	rootCmd.Flags().StringVar(&DatabaseHost, "db-host", "", "database host to connect to")
+	rootCmd.Flags().StringVar(&DatabasePort, "db-port", "", "database port to connect to")
+	rootCmd.Flags().StringVar(&DatabaseUser, "db-user", "", "database user to connect as")
+	rootCmd.Flags().StringVar(&DatabasePass, "db-pass", "", "database password to connect with")
+	rootCmd.Flags().StringVar(&DatabaseName, "db-name", "", "database name to connect to")
+	rootCmd.Flags().StringVar(&DatabaseTable, "db-table", "", "database table to query")
+	rootCmd.Flags().StringVar(&DatabaseSslMode, "db-ssl-mode", "", "database ssl connection mode")
+	rootCmd.Flags().StringVar(&DatabaseRootCert, "db-root-cert", "", "database ssl root certificate path")
+	rootCmd.Flags().StringVar(&DatabaseSslCert, "db-ssl-cert", "", "database ssl connection certificate path")
+	rootCmd.Flags().StringVar(&DatabaseSslKey, "db-ssl-key", "", "database ssl connection key path")
+	rootCmd.Flags().StringVar(&TimeZone, "timezone", "", "timezone to use")
 	rootCmd.Flags().StringVarP(&bind, "bind", "b", "0.0.0.0", "address to bind to")
 	rootCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "port to listen on")
 	rootCmd.Flags().BoolVar(&profile, "profile", false, "register net/http/pprof handlers")
@@ -82,4 +81,45 @@ func init() {
 
 	rootCmd.SetVersionTemplate("commands v{{.Version}}\n")
 	rootCmd.Version = ReleaseVersion
+
+	return rootCmd
+}
+
+func initializeConfig(cmd *cobra.Command) error {
+	v := viper.New()
+
+	v.SetConfigName("config")
+
+	v.SetConfigType("yaml")
+
+	v.AddConfigPath("/etc/commands/")
+	v.AddConfigPath("$HOME/.config/commands")
+	v.AddConfigPath(".")
+
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+
+	v.SetEnvPrefix("commands")
+
+	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+
+	v.AutomaticEnv()
+
+	bindFlags(cmd, v)
+
+	return nil
+}
+
+func bindFlags(cmd *cobra.Command, v *viper.Viper) {
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		configName := strings.ReplaceAll(f.Name, "-", "_")
+
+		if !f.Changed && v.IsSet(configName) {
+			val := v.Get(configName)
+			cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+		}
+	})
 }

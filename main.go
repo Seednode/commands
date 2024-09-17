@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	cmd := cmd.NewRootCommand()
+
 	err := cmd.Execute()
 	if err != nil {
 		log.Fatal(err)

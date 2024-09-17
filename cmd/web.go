@@ -215,12 +215,9 @@ func ServeVersion() httprouter.Handle {
 }
 
 func ServePage() error {
-	timeZone, err := GetEnvVar("TZ", TimeZone, false)
-	if err != nil {
-		return err
-	}
+	var err error
 
-	time.Local, err = time.LoadLocation(timeZone)
+	time.Local, err = time.LoadLocation(TimeZone)
 	if err != nil {
 		return err
 	}
@@ -235,27 +232,18 @@ func ServePage() error {
 		return errors.New("invalid bind address provided")
 	}
 
-	dbType, err := GetEnvVar("COMMANDS_DB_TYPE", DatabaseType, false)
-	if err != nil {
-		return err
-	}
-	if dbType != "cockroachdb" && dbType != "postgresql" {
+	if DatabaseType != "cockroachdb" && DatabaseType != "postgresql" {
 		return errors.New("invalid database type specified")
 	}
 
-	databaseURL, err := GetDatabaseURL(dbType)
-	if err != nil {
-		return err
-	}
-
-	tableName, err := GetEnvVar("COMMANDS_DB_TABLE", DatabaseTable, false)
+	databaseURL, err := GetDatabaseURL()
 	if err != nil {
 		return err
 	}
 
 	database := &Database{
 		Url:   databaseURL,
-		Table: tableName,
+		Table: DatabaseTable,
 	}
 
 	mux := httprouter.New()
