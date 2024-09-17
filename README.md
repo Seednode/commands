@@ -72,7 +72,7 @@ TIMEZONE: America/Chicago
 ### Environment variables
 Almost all options configurable via flags can also be configured via environment variables.
 
-The associated environment variable is the prefix `QUERY_` plus the flag name, with the following changes:
+The associated environment variable is the prefix `COMMANDS_` plus the flag name, with the following changes:
 - Leading hyphens removed
 - Converted to upper-case
 - All internal hyphens converted to underscores
