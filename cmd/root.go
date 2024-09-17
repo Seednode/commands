@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ReleaseVersion string = "0.6.0"
+	ReleaseVersion string = "0.6.1"
 )
 
 var (
@@ -40,16 +40,11 @@ func NewRootCommand() *cobra.Command {
 		Use:   "commands",
 		Short: "Display command logs from a database.",
 		Args:  cobra.ExactArgs(0),
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return initializeConfig(cmd)
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			initializeConfig(cmd)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := ServePage()
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return ServePage()
 		},
 	}
 
@@ -83,22 +78,8 @@ func NewRootCommand() *cobra.Command {
 	return rootCmd
 }
 
-func initializeConfig(cmd *cobra.Command) error {
+func initializeConfig(cmd *cobra.Command) {
 	v := viper.New()
-
-	v.SetConfigName("config")
-
-	v.SetConfigType("yaml")
-
-	v.AddConfigPath("/etc/commands/")
-	v.AddConfigPath("$HOME/.config/commands")
-	v.AddConfigPath(".")
-
-	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return err
-		}
-	}
 
 	v.SetEnvPrefix("commands")
 
@@ -107,8 +88,6 @@ func initializeConfig(cmd *cobra.Command) error {
 	v.AutomaticEnv()
 
 	bindFlags(cmd, v)
-
-	return nil
 }
 
 func bindFlags(cmd *cobra.Command, v *viper.Viper) {
