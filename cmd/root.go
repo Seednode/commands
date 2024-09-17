@@ -14,22 +14,22 @@ import (
 )
 
 const (
-	ReleaseVersion string = "0.5.0"
+	ReleaseVersion string = "0.5.1"
 )
 
 var (
-	DatabaseType     string
-	DatabaseHost     string
-	DatabasePort     string
-	DatabaseUser     string
-	DatabasePass     string
-	DatabaseName     string
-	DatabaseTable    string
-	DatabaseSslMode  string
-	DatabaseRootCert string
-	DatabaseSslCert  string
-	DatabaseSslKey   string
-	TimeZone         string
+	databaseType     string
+	databaseHost     string
+	databasePort     string
+	databaseUser     string
+	databasePass     string
+	databaseName     string
+	databaseTable    string
+	databaseSslMode  string
+	databaseRootCert string
+	databaseSslCert  string
+	databaseSslKey   string
+	timeZone         string
 	bind             string
 	port             uint16
 	profile          bool
@@ -54,18 +54,18 @@ func NewRootCommand() *cobra.Command {
 		},
 	}
 
-	rootCmd.Flags().StringVar(&DatabaseType, "db-type", "", "database type to connect to")
-	rootCmd.Flags().StringVar(&DatabaseHost, "db-host", "", "database host to connect to")
-	rootCmd.Flags().StringVar(&DatabasePort, "db-port", "", "database port to connect to")
-	rootCmd.Flags().StringVar(&DatabaseUser, "db-user", "", "database user to connect as")
-	rootCmd.Flags().StringVar(&DatabasePass, "db-pass", "", "database password to connect with")
-	rootCmd.Flags().StringVar(&DatabaseName, "db-name", "", "database name to connect to")
-	rootCmd.Flags().StringVar(&DatabaseTable, "db-table", "", "database table to query")
-	rootCmd.Flags().StringVar(&DatabaseSslMode, "db-ssl-mode", "", "database ssl connection mode")
-	rootCmd.Flags().StringVar(&DatabaseRootCert, "db-root-cert", "", "database ssl root certificate path")
-	rootCmd.Flags().StringVar(&DatabaseSslCert, "db-ssl-cert", "", "database ssl connection certificate path")
-	rootCmd.Flags().StringVar(&DatabaseSslKey, "db-ssl-key", "", "database ssl connection key path")
-	rootCmd.Flags().StringVar(&TimeZone, "timezone", "", "timezone to use")
+	rootCmd.Flags().StringVar(&databaseType, "db-type", "", "database type to connect to")
+	rootCmd.Flags().StringVar(&databaseHost, "db-host", "", "database host to connect to")
+	rootCmd.Flags().StringVar(&databasePort, "db-port", "", "database port to connect to")
+	rootCmd.Flags().StringVar(&databaseUser, "db-user", "", "database user to connect as")
+	rootCmd.Flags().StringVar(&databasePass, "db-pass", "", "database password to connect with")
+	rootCmd.Flags().StringVar(&databaseName, "db-name", "", "database name to connect to")
+	rootCmd.Flags().StringVar(&databaseTable, "db-table", "", "database table to query")
+	rootCmd.Flags().StringVar(&databaseSslMode, "db-ssl-mode", "", "database ssl connection mode")
+	rootCmd.Flags().StringVar(&databaseRootCert, "db-root-cert", "", "database ssl root certificate path")
+	rootCmd.Flags().StringVar(&databaseSslCert, "db-ssl-cert", "", "database ssl connection certificate path")
+	rootCmd.Flags().StringVar(&databaseSslKey, "db-ssl-key", "", "database ssl connection key path")
+	rootCmd.Flags().StringVar(&timeZone, "timezone", "", "timezone to use")
 	rootCmd.Flags().StringVarP(&bind, "bind", "b", "0.0.0.0", "address to bind to")
 	rootCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "port to listen on")
 	rootCmd.Flags().BoolVar(&profile, "profile", false, "register net/http/pprof handlers")
