@@ -66,7 +66,6 @@ COMMANDS_DB_NAME: logging
 COMMANDS_DB_TABLE: logging
 COMMANDS_DB_SSL_MODE: disable
 COMMANDS_PORT: 8080
-COMMANDS_TIMEZONE: America/Chicago
 ```
 
 ### Environment variables
@@ -88,7 +87,7 @@ COMMANDS_DB_NAME=logging
 COMMANDS_DB_TABLE=logging
 COMMANDS_DB_SSL_MODE=disable
 COMMANDS_PORT=8080
-COMMANDS_TIMEZONE=America/Chicago
+TZ=America/Chicago
 ```
 
 ## Usage output
@@ -115,7 +114,6 @@ Flags:
   -h, --help                  help for commands
   -p, --port uint16           port to listen on (default 8080)
       --profile               register net/http/pprof handlers
-      --timezone string       timezone to use
   -V, --version               display version and exit
 ```
 

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ReleaseVersion string = "0.5.1"
+	ReleaseVersion string = "0.6.0"
 )
 
 var (
@@ -29,7 +29,6 @@ var (
 	databaseRootCert string
 	databaseSslCert  string
 	databaseSslKey   string
-	timeZone         string
 	bind             string
 	port             uint16
 	profile          bool
@@ -65,7 +64,6 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.Flags().StringVar(&databaseRootCert, "db-root-cert", "", "database ssl root certificate path")
 	rootCmd.Flags().StringVar(&databaseSslCert, "db-ssl-cert", "", "database ssl connection certificate path")
 	rootCmd.Flags().StringVar(&databaseSslKey, "db-ssl-key", "", "database ssl connection key path")
-	rootCmd.Flags().StringVar(&timeZone, "timezone", "", "timezone to use")
 	rootCmd.Flags().StringVarP(&bind, "bind", "b", "0.0.0.0", "address to bind to")
 	rootCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "port to listen on")
 	rootCmd.Flags().BoolVar(&profile, "profile", false, "register net/http/pprof handlers")

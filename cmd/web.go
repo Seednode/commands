@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"text/template"
@@ -217,9 +218,12 @@ func ServeVersion() httprouter.Handle {
 func ServePage() error {
 	var err error
 
-	time.Local, err = time.LoadLocation(timeZone)
-	if err != nil {
-		return err
+	timeZone := os.Getenv("TZ")
+	if timeZone != "" {
+		time.Local, err = time.LoadLocation(timeZone)
+		if err != nil {
+			return err
+		}
 	}
 
 	bindHost, err := net.LookupHost(bind)
