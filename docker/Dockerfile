@@ -2,7 +2,7 @@
 ARG app=commands
 
 # create build stage
-ARG TAG
+ARG TAG=latest
 FROM --platform=$BUILDPLATFORM golang:$TAG AS build
 ARG app
 
