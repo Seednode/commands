@@ -92,6 +92,9 @@ Flags:
   -h, --help                  help for commands
   -p, --port uint16           port to listen on (default 8080)
       --profile               register net/http/pprof handlers
+      --tls-cert string       path to TLS certificate
+      --tls-key string        path to TLS keyfile
+  -v, --verbose               display additional output
   -V, --version               display version and exit
 ```
 
