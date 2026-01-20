@@ -33,7 +33,7 @@ var htmlTemplate = `{{range .}}        <tr>
 {{end}}        </tr>
 {{end}}`
 
-func RangeStructer(args ...interface{}) []interface{} {
+func RangeStructer(args ...any) []any {
 	if len(args) == 0 {
 		return nil
 	}
@@ -43,7 +43,7 @@ func RangeStructer(args ...interface{}) []interface{} {
 		return nil
 	}
 
-	out := make([]interface{}, v.NumField())
+	out := make([]any, v.NumField())
 	for i := range v.NumField() {
 		out[i] = v.Field(i).Interface()
 	}
@@ -215,7 +215,7 @@ func ServePageHandler(database *Database) httprouter.Handle {
 	}
 }
 
-func ServerError(w http.ResponseWriter, r *http.Request, i interface{}) {
+func ServerError(w http.ResponseWriter, r *http.Request, i any) {
 	w.WriteHeader(http.StatusInternalServerError)
 
 	w.Header().Add("Content-Type", "text/plain")
@@ -225,13 +225,13 @@ func ServerError(w http.ResponseWriter, r *http.Request, i interface{}) {
 	w.Write([]byte("500 Internal Server Error\n"))
 }
 
-func ServerErrorHandler() func(http.ResponseWriter, *http.Request, interface{}) {
+func ServerErrorHandler() func(http.ResponseWriter, *http.Request, any) {
 	return ServerError
 }
 
 func ServeVersion() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := []byte(fmt.Sprintf("commands v%s\n", ReleaseVersion))
+		data := fmt.Appendf(nil, "commands v%s\n", ReleaseVersion)
 
 		securityHeaders(w)
 
