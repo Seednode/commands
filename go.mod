@@ -1,6 +1,6 @@
 module github.com/Seednode/commands
 
-go 1.25
+go 1.26
 
 require (
 	github.com/jackc/pgx/v5 v5.8.0
